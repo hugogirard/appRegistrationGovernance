@@ -21,3 +21,21 @@ module storage 'modules/storage/storage.bicep' = {
     suffix: suffix
   }
 }
+
+module monitoring 'modules/monitoring/monitoring.bicep' = {
+  scope: resourceGroup(rg.name)
+  name: 'monitoring'
+  params: {
+    location: location
+    suffix: suffix
+  }
+}
+
+module logicapp 'modules/logicapp/logicapp.bicep' = {
+  scope: resourceGroup(rg.name)
+  name: 'logicapp'
+  params: {
+    location: location
+    suffix: suffix
+  }
+}
