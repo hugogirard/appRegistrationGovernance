@@ -1,6 +1,6 @@
 param location string
-//param storageName string
-// param insightName string
+param storageName string
+param insightName string
 param suffix string
 
 resource storage 'Microsoft.Storage/storageAccounts@2022-05-01' existing = {

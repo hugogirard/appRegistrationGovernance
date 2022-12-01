@@ -37,5 +37,7 @@ module logicapp 'modules/logicapp/logicapp.bicep' = {
   params: {
     location: location
     suffix: suffix
+    insightName: monitoring.outputs.insightName
+    storageName: storage.outputs.storageAccountName
   }
 }
