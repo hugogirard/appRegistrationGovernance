@@ -6,11 +6,11 @@
                 "type": "Http",
                 "inputs": {
                     "method": "POST",
-                    "uri": "https://login.microsoftonline.com/@appsetting('WORKFLOWS_TENANT_ID')/oauth2/v2.0/token",
+                    "uri": "https://login.microsoftonline.com/@{appsetting('WORKFLOWS_TENANT_ID')}/oauth2/v2.0/token",
                     "headers": {
                         "Content-Type": "application/x-www-form-urlencoded"
                     },
-                    "body": "grant_type=client_credentials&client_id=@appsetting('CLIENT_ID')&client_secret=@appsetting('CLIENT_SECRET')&scope=https://graph.microsoft.com/.default"
+                    "body": "grant_type=client_credentials&client_id=@{appsetting('CLIENT_ID')}&client_secret=@{appsetting('CLIENT_SECRET')}&scope=https://graph.microsoft.com/.default"
                 },
                 "runAfter": {}
             },
@@ -101,6 +101,164 @@
                             }
                         },
                         "runAfter": {}
+                    },
+                    "Get_Applications_owners": {
+                        "type": "Http",
+                        "inputs": {
+                            "method": "GET",
+                            "uri": "@variables('msGraphEndpoint')",
+                            "headers": {
+                                "Authorization": "Bearer @{body('Get_Bearer_Token')?['access_token']}"
+                            }
+                        },
+                        "runAfter": {
+                            "Get_Bearer_Token": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Parse_JSON_result_applications": {
+                        "type": "ParseJson",
+                        "inputs": {
+                            "content": "@body('Get_Applications_owners')",
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "@@odata.context": {
+                                        "type": "string"
+                                    },
+                                    "@@odata.nextLink": {
+                                        "type": "string"
+                                    },
+                                    "value": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "displayName": {
+                                                    "type": "string"
+                                                },
+                                                "owners": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "@@odata.type": {
+                                                                "type": "string"
+                                                            },
+                                                            "mail": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "@@odata.type",
+                                                            "mail"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "displayName",
+                                                "owners"
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "Get_Applications_owners": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "if_return_applications": {
+                        "type": "If",
+                        "expression": {
+                            "and": [
+                                {
+                                    "greater": [
+                                        "@body('Parse_JSON_result_applications')?['value']",
+                                        0
+                                    ]
+                                }
+                            ]
+                        },
+                        "actions": {
+                            "For_each": {
+                                "type": "Foreach",
+                                "foreach": "@body('Parse_JSON_result_applications')?['value']",
+                                "actions": {
+                                    "Append_to_array_variable": {
+                                        "type": "AppendToArrayVariable",
+                                        "inputs": {
+                                            "name": "applications",
+                                            "value": {
+                                                "id": "@items('For_each')?['id']",
+                                                "displayName": "@items('For_each')?['displayName']",
+                                                "owners": "@items('For_each')?['owners']"
+                                            }
+                                        },
+                                        "runAfter": {}
+                                    }
+                                },
+                                "runAfter": {}
+                            },
+                            "Create_or_Update_applications": {
+                                "type": "ServiceProvider",
+                                "inputs": {
+                                    "parameters": {
+                                        "databaseId": "reporting",
+                                        "containerId": "reports",
+                                        "items": "@variables('applications')",
+                                        "isUpsert": true
+                                    },
+                                    "serviceProviderConfiguration": {
+                                        "connectionName": "AzureCosmosDB",
+                                        "operationId": "BulkCreateOrUpdateDocument",
+                                        "serviceProviderId": "/serviceProviders/AzureCosmosDB"
+                                    }
+                                },
+                                "runAfter": {
+                                    "For_each": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "Set_next_batch_applications": {
+                                "type": "SetVariable",
+                                "inputs": {
+                                    "name": "msGraphEndpoint",
+                                    "value": "@body('Parse_JSON_result_applications')?['@odata.nextLink']"
+                                },
+                                "runAfter": {
+                                    "Create_or_Update_applications": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "Parse_JSON_result_applications": [
+                                "Succeeded"
+                            ]
+                        },
+                        "else": {
+                            "actions": {
+                                "stop_loop": {
+                                    "type": "SetVariable",
+                                    "inputs": {
+                                        "name": "continueFetching",
+                                        "value": false
+                                    },
+                                    "runAfter": {}
+                                }
+                            }
+                        }
                     }
                 },
                 "runAfter": {
