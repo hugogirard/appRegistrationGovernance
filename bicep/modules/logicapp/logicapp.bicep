@@ -115,3 +115,5 @@ resource logiapp 'Microsoft.Web/sites@2021-02-01' = {
     clientAffinityEnabled: false    
   }
 }
+
+output logiappName string = logiapp.name

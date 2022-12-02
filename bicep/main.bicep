@@ -60,3 +60,5 @@ module cosmos 'modules/cosmos/cosmosdb.bicep' = {
     suffix: suffix
   }
 }
+
+output logicAppName string = logicapp.outputs.logiappName
