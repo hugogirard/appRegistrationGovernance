@@ -10,7 +10,7 @@ param resourceGroupName string
 @secure()
 param clientId string
 
-@description('The Service Principal Client Secret')\
+@description('The Service Principal Client Secret')
 @secure()
 param clientSecret string
 
