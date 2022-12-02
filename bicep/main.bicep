@@ -6,6 +6,14 @@ param location string
 @description('The name of the Azure resource group')
 param resourceGroupName string
 
+@description('The Service Principal Client ID')
+@secure()
+param clientId string
+
+@description('The Service Principal Client Secret')\
+@secure()
+param clientSecret string
+
 var suffix = uniqueString(rg.id)
 
 resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
@@ -39,5 +47,16 @@ module logicapp 'modules/logicapp/logicapp.bicep' = {
     suffix: suffix
     insightName: monitoring.outputs.insightName
     storageName: storage.outputs.storageAccountName
+    clientId: clientId
+    clientSecret: clientSecret
+  }
+}
+
+module cosmos 'modules/cosmos/cosmosdb.bicep' = {
+  scope: resourceGroup(rg.name)
+  name: 'cosmos'
+  params: {
+    location: location
+    suffix: suffix
   }
 }

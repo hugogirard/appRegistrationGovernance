@@ -2,6 +2,11 @@ param location string
 param storageName string
 param insightName string
 param suffix string
+@secure()
+param clientId string
+@secure()
+param clientSecret string
+
 
 resource storage 'Microsoft.Storage/storageAccounts@2022-05-01' existing = {
   name: storageName
@@ -62,6 +67,18 @@ resource logiapp 'Microsoft.Web/sites@2021-02-01' = {
         {
           name: 'WORKFLOWS_SUBSCRIPTION_ID'
           value: subscription().subscriptionId
+        }
+        {
+          name: 'WORKFLOWS_TENANT_ID'
+          value: subscription().tenantId
+        }
+        {
+          name: 'CLIENT_ID'
+          value: clientId
+        }
+        {
+          name: 'CLIENT_SECRET'
+          value: clientSecret
         }
         {
           name: 'WORKFLOWS_LOCATION_NAME'

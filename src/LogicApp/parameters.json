@@ -1,0 +1,6 @@
+{
+  "runEveryMinuteFrequency": {
+    "type": "Int",
+    "value": 1
+  }
+}

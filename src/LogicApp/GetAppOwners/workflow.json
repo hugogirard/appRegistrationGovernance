@@ -1,0 +1,29 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Get_JWT_Token_Azure_Active_Directory": {
+                "type": "Http",
+                "inputs": {
+                    "method": "POST",
+                    "uri": "https://login.microsoftonline.com/@appsetting('WORKFLOWS_TENANT_ID')/oauth2/v2.0/token",
+                    "headers": {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    "body": "grant_type=client_credentials&client_id=@appsetting('CLIENT_ID')&client_secret=@appsetting('CLIENT_SECRET')&scope=https://graph.microsoft.com/.default"
+                },
+                "runAfter": {}
+            }
+        },
+        "triggers": {
+            "manual": {
+                "type": "Request",
+                "kind": "Http",
+                "inputs": {}
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {}
+    },
+    "kind": "Stateful"
+}
