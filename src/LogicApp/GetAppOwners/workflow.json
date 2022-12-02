@@ -13,6 +13,101 @@
                     "body": "grant_type=client_credentials&client_id=@appsetting('CLIENT_ID')&client_secret=@appsetting('CLIENT_SECRET')&scope=https://graph.microsoft.com/.default"
                 },
                 "runAfter": {}
+            },
+            "Initialize_variable_loop": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "continueFetching",
+                            "type": "boolean",
+                            "value": true
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Get_JWT_Token_Azure_Active_Directory": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialize_variable_MsGraph_Endpoint": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "msGraphEndpoint",
+                            "type": "string",
+                            "value": "https://graph.microsoft.com/v1.0/applications?$select=id,DisplayName&$expand=owners($select=mail)&$top=5"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_variable_loop": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialize_variable_list_of_applications": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "applications",
+                            "type": "array",
+                            "value": []
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_variable_MsGraph_Endpoint": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "validate_JWT_token_was_obtain": {
+                "type": "If",
+                "expression": {
+                    "and": [
+                        {
+                            "equals": [
+                                "@outputs('Get_JWT_Token_Azure_Active_Directory')['statusCode']",
+                                200
+                            ]
+                        }
+                    ]
+                },
+                "actions": {
+                    "Get_Bearer_Token": {
+                        "type": "ParseJson",
+                        "inputs": {
+                            "content": "@body('Get_JWT_Token_Azure_Active_Directory')",
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "token_type": {
+                                        "type": "string"
+                                    },
+                                    "expires_in": {
+                                        "type": "integer"
+                                    },
+                                    "ext_expires_in": {
+                                        "type": "integer"
+                                    },
+                                    "access_token": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        },
+                        "runAfter": {}
+                    }
+                },
+                "runAfter": {
+                    "Initialize_variable_list_of_applications": [
+                        "Succeeded"
+                    ]
+                }
             }
         },
         "triggers": {
