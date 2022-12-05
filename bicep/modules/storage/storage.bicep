@@ -20,4 +20,8 @@ resource strApp 'Microsoft.Storage/storageAccounts@2022-05-01' = {
   }
 }
 
+resource container 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-06-01' = {
+  name: '${strApp.name}/default/reports'
+}
+
 output storageAccountName string = strApp.name
