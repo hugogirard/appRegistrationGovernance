@@ -2,11 +2,17 @@ param location string
 param storageName string
 param insightName string
 param suffix string
+param cosmosDbAccountName string
+
 @secure()
 param clientId string
 @secure()
 param clientSecret string
 
+
+resource cosmos 'Microsoft.DocumentDB/databaseAccounts@2021-10-15' existing = {
+  name: cosmosDbAccountName
+}
 
 resource storage 'Microsoft.Storage/storageAccounts@2022-05-01' existing = {
   name: storageName
@@ -83,6 +89,10 @@ resource logiapp 'Microsoft.Web/sites@2021-02-01' = {
         {
           name: 'WORKFLOWS_LOCATION_NAME'
           value: location
+        }
+        {
+          name: 'COSMOS_CNXSTRING'
+          value: cosmos.listKeys().primaryMasterKey
         }
         {
           name: 'WEBSITE_NODE_DEFAULT_VERSION'

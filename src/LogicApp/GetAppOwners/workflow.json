@@ -200,7 +200,9 @@
                                             "value": {
                                                 "id": "@items('For_each')?['id']",
                                                 "displayName": "@items('For_each')?['displayName']",
-                                                "owners": "@items('For_each')?['owners']"
+                                                "owners": "@items('For_each')?['owners']",
+                                                "currentDate": "@variables('currentDate')",
+                                                "reportType": "applications"
                                             }
                                         },
                                         "runAfter": {}
@@ -260,6 +262,23 @@
                             }
                         }
                     }
+                },
+                "runAfter": {
+                    "Initialize_variable_current_date": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialize_variable_current_date": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "currentDate",
+                            "type": "string",
+                            "value": "@{utcNow('yyyyMM')}"
+                        }
+                    ]
                 },
                 "runAfter": {
                     "Initialize_variable_list_of_applications": [
