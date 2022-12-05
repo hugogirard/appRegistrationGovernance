@@ -181,9 +181,9 @@
                         "expression": {
                             "and": [
                                 {
-                                    "greater": [
-                                        "@body('Parse_JSON_result_applications')?['value']",
-                                        0
+                                    "equals": [
+                                        "@empty(body('Parse_JSON_result_applications')?['value'])",
+                                        false
                                     ]
                                 }
                             ]

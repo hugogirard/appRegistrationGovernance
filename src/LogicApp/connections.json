@@ -1,0 +1,14 @@
+{
+  "serviceProviderConnections": {
+    "AzureCosmosDB": {
+      "parameterValues": {
+        "connectionString": "@appsetting('COSMOS_CNXSTRING')"
+      },
+      "serviceProvider": {
+        "id": "/serviceProviders/AzureCosmosDB"
+      },
+      "displayName": "CosmosCnxString"
+    }
+  },
+  "managedApiConnections": {}
+}
