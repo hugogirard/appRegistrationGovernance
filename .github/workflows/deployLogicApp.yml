@@ -25,13 +25,13 @@ jobs:
 
       - name: Package logic
         run: | 
-          cd src/logicApp
+          cd ${{ env.LOGICAPP_PACKAGE_PATH }}
           mkdir -p output
           zip -r ./output/logic.zip .
 
       - name: Check dir
         run: |
-          ls -la src/logicApp
+          ls -la ${{ env.LOGICAPP_PACKAGE_PATH }}
 
       - name: Login via Az module
         uses: azure/login@v1
@@ -56,12 +56,5 @@ jobs:
         id: la
         with:
           app-name: ${{ env.RG_NAME }}
-          package: 'src/logicApp/output/logic.zip'
+          package: '${{ env.LOGICAPP_PACKAGE_PATH }}/output/logic.zip'
           publish-profile: ${{steps.publishprofile.outputs.profile}}
-
-      - name: Swap parameter files 
-        id: params
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az functionapp deploy --resource-group ${{ env.RG_NAME }} --name ${{ secrets.LOGIC_APP_NAME }} --src-path  src/logicApp/azure.parameters.json --type static --target-path parameters.json          
