@@ -35,6 +35,8 @@ resource webFarm 'Microsoft.Web/serverfarms@2021-02-01' = {
 }
 
 
+var cosmosDbCnxString = 'AccountEndpoint=https://${cosmos.name}.documents.azure.com:443/;AccountKey=${cosmos.listKeys().primaryMasterKey};'
+
 resource logiapp 'Microsoft.Web/sites@2021-02-01' = {
   name: 'logicapp-${suffix}'
   location: location
@@ -92,7 +94,7 @@ resource logiapp 'Microsoft.Web/sites@2021-02-01' = {
         }
         {
           name: 'COSMOS_CNXSTRING'
-          value: cosmos.listKeys().primaryMasterKey
+          value: cosmosDbCnxString
         }
         {
           name: 'WEBSITE_NODE_DEFAULT_VERSION'
