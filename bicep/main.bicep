@@ -49,6 +49,7 @@ module logicapp 'modules/logicapp/logicapp.bicep' = {
     storageName: storage.outputs.storageAccountName
     clientId: clientId
     clientSecret: clientSecret
+    cosmosDbAccountName: cosmos.outputs.cosmosDbAccountName
   }
 }
 
