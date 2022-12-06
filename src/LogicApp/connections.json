@@ -11,7 +11,7 @@
     },
     "AzureBlob": {
       "parameterValues": {
-        "connectionString": "@appsetting('AzureBlob_connectionString')"
+        "connectionString": "@appsetting('AzureWebJobsStorage')"
       },
       "serviceProvider": {
         "id": "/serviceProviders/AzureBlob"

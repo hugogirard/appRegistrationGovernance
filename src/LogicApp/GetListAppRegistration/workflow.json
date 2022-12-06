@@ -294,6 +294,58 @@
                                         "Succeeded"
                                     ]
                                 }
+                            },
+                            "Query_applications_with_less_than_two_owners": {
+                                "type": "ServiceProvider",
+                                "inputs": {
+                                    "parameters": {
+                                        "databaseId": "reporting",
+                                        "containerId": "reports",
+                                        "queryText": "select c.id,c.displayName\n  from c\n WHERE ARRAY_LENGTH(c.owners) < 2"
+                                    },
+                                    "serviceProviderConfiguration": {
+                                        "connectionName": "AzureCosmosDB",
+                                        "operationId": "QueryDocuments",
+                                        "serviceProviderId": "/serviceProviders/AzureCosmosDB"
+                                    }
+                                },
+                                "runAfter": {
+                                    "Create_or_Update_applications": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "Create_CSV_list_of_apps_with_less_than_two_owners": {
+                                "type": "Table",
+                                "inputs": {
+                                    "from": "@body('Query_applications_with_less_than_two_owners')?['items']",
+                                    "format": "CSV"
+                                },
+                                "runAfter": {
+                                    "Query_applications_with_less_than_two_owners": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "Upload_blob_to_storage_container": {
+                                "type": "ServiceProvider",
+                                "inputs": {
+                                    "parameters": {
+                                        "containerName": "reports",
+                                        "blobName": "@concat('apps_without_owner',variables('currentDate'),'.csv')",
+                                        "content": "@body('Create_CSV_list_of_apps_with_less_than_two_owners')"
+                                    },
+                                    "serviceProviderConfiguration": {
+                                        "connectionName": "AzureBlob",
+                                        "operationId": "uploadBlob",
+                                        "serviceProviderId": "/serviceProviders/AzureBlob"
+                                    }
+                                },
+                                "runAfter": {
+                                    "Create_CSV_list_of_apps_with_less_than_two_owners": [
+                                        "Succeeded"
+                                    ]
+                                }
                             }
                         },
                         "runAfter": {
