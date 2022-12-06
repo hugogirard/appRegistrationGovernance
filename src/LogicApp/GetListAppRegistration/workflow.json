@@ -261,7 +261,7 @@
                                     "parameters": {
                                         "databaseId": "reporting",
                                         "containerId": "reports",
-                                        "queryText": "select c.id,c.disPlayName,o.userPrincipalName as owner \n  from c\n  JOIN o IN c.owners"
+                                        "queryText": "select c.id,c.displayName,o.userPrincipalName as owner \n  from c\n  JOIN o IN c.owners"
                                     },
                                     "serviceProviderConfiguration": {
                                         "connectionName": "AzureCosmosDB",
@@ -281,7 +281,7 @@
                                     "parameters": {
                                         "containerName": "reports",
                                         "blobName": "@concat('apps_owner_',variables('currentDate'),'.csv')",
-                                        "content": "@{body('Create_CSV_list_of_owners')}.csv"
+                                        "content": "@body('Create_CSV_list_of_owners')"
                                     },
                                     "serviceProviderConfiguration": {
                                         "connectionName": "AzureBlob",
