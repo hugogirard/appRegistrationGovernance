@@ -332,7 +332,7 @@
                                 "inputs": {
                                     "parameters": {
                                         "containerName": "reports",
-                                        "blobName": "@concat('apps_without_owner',variables('currentDate'),'.csv')",
+                                        "blobName": "@concat('apps_without_owner_',variables('currentDate'),'.csv')",
                                         "content": "@body('Create_CSV_list_of_apps_with_less_than_two_owners')"
                                     },
                                     "serviceProviderConfiguration": {
