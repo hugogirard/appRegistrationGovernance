@@ -38,7 +38,7 @@
                         {
                             "name": "msGraphEndpoint",
                             "type": "string",
-                            "value": "https://graph.microsoft.com/v1.0/applications?$select=id,DisplayName&$expand=owners($select=mail)&$top=5"
+                            "value": "https://graph.microsoft.com/v1.0/applications?$select=id,DisplayName,api,appRoles&$expand=owners($select=userPrincipalName)&$top=15"
                         }
                     ]
                 },
@@ -149,13 +149,13 @@
                                                             "@@odata.type": {
                                                                 "type": "string"
                                                             },
-                                                            "mail": {
+                                                            "userPrincipalName": {
                                                                 "type": "string"
                                                             }
                                                         },
                                                         "required": [
                                                             "@@odata.type",
-                                                            "mail"
+                                                            "userPrincipalName"
                                                         ]
                                                     }
                                                 }
@@ -238,7 +238,59 @@
                                     "value": "@body('Parse_JSON_result_applications')?['@odata.nextLink']"
                                 },
                                 "runAfter": {
+                                    "Upload_blob_list_application_owners": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "Create_CSV_list_of_owners": {
+                                "type": "Table",
+                                "inputs": {
+                                    "from": "@body('Query_applications_owners')?['items']",
+                                    "format": "CSV"
+                                },
+                                "runAfter": {
+                                    "Query_applications_owners": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "Query_applications_owners": {
+                                "type": "ServiceProvider",
+                                "inputs": {
+                                    "parameters": {
+                                        "databaseId": "reporting",
+                                        "containerId": "reports",
+                                        "queryText": "select c.id,c.disPlayName,o.userPrincipalName as owner \n  from c\n  JOIN o IN c.owners"
+                                    },
+                                    "serviceProviderConfiguration": {
+                                        "connectionName": "AzureCosmosDB",
+                                        "operationId": "QueryDocuments",
+                                        "serviceProviderId": "/serviceProviders/AzureCosmosDB"
+                                    }
+                                },
+                                "runAfter": {
                                     "Create_or_Update_applications": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "Upload_blob_list_application_owners": {
+                                "type": "ServiceProvider",
+                                "inputs": {
+                                    "parameters": {
+                                        "containerName": "reports",
+                                        "blobName": "@concat('apps_owner_',variables('currentDate'),'.csv')",
+                                        "content": "@{body('Create_CSV_list_of_owners')}.csv"
+                                    },
+                                    "serviceProviderConfiguration": {
+                                        "connectionName": "AzureBlob",
+                                        "operationId": "uploadBlob",
+                                        "serviceProviderId": "/serviceProviders/AzureBlob"
+                                    }
+                                },
+                                "runAfter": {
+                                    "Create_CSV_list_of_owners": [
                                         "Succeeded"
                                     ]
                                 }
@@ -248,18 +300,6 @@
                             "Parse_JSON_result_applications": [
                                 "Succeeded"
                             ]
-                        },
-                        "else": {
-                            "actions": {
-                                "stop_loop": {
-                                    "type": "SetVariable",
-                                    "inputs": {
-                                        "name": "continueFetching",
-                                        "value": false
-                                    },
-                                    "runAfter": {}
-                                }
-                            }
                         }
                     }
                 },

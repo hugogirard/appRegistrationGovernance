@@ -21,3 +21,9 @@ https://graph.microsoft.com/v1.0/applications?$select=passwordCredentials,id&$to
 
 https://graph.microsoft.com/v1.0/applications?$select=id,DisplayName,owners$expand=owners
 https://graph.microsoft.com/v1.0/applications?$select=id,DisplayName&$expand=owners($select=mail)
+
+# Cosmos Query
+
+select c.id,c.disPlayName,o as owners 
+  from c
+  JOIN o IN c.owners
