@@ -346,6 +346,25 @@
                                         "Succeeded"
                                     ]
                                 }
+                            },
+                            "Condition": {
+                                "type": "If",
+                                "expression": {
+                                    "and": [
+                                        {
+                                            "equals": [
+                                                "@equals(body('Parse_JSON_result_applications')?['@odata.nextLink'])",
+                                                "@false"
+                                            ]
+                                        }
+                                    ]
+                                },
+                                "actions": {},
+                                "runAfter": {
+                                    "Set_next_batch_applications": [
+                                        "Succeeded"
+                                    ]
+                                }
                             }
                         },
                         "runAfter": {
