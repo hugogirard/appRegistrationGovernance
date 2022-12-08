@@ -231,18 +231,6 @@
                                     ]
                                 }
                             },
-                            "Set_next_batch_applications": {
-                                "type": "SetVariable",
-                                "inputs": {
-                                    "name": "msGraphEndpoint",
-                                    "value": "@body('Parse_JSON_result_applications')?['@odata.nextLink']"
-                                },
-                                "runAfter": {
-                                    "Upload_blob_list_application_owners": [
-                                        "Succeeded"
-                                    ]
-                                }
-                            },
                             "Create_CSV_list_of_owners": {
                                 "type": "Table",
                                 "inputs": {
@@ -281,7 +269,8 @@
                                     "parameters": {
                                         "containerName": "reports",
                                         "blobName": "@concat('apps_owner_',variables('currentDate'),'.csv')",
-                                        "content": "@body('Create_CSV_list_of_owners')"
+                                        "content": "@body('Create_CSV_list_of_owners')",
+                                        "overrideIfExists": true
                                     },
                                     "serviceProviderConfiguration": {
                                         "connectionName": "AzureBlob",
@@ -333,7 +322,8 @@
                                     "parameters": {
                                         "containerName": "reports",
                                         "blobName": "@concat('apps_without_owner_',variables('currentDate'),'.csv')",
-                                        "content": "@body('Create_CSV_list_of_apps_with_less_than_two_owners')"
+                                        "content": "@body('Create_CSV_list_of_apps_with_less_than_two_owners')",
+                                        "overrideIfExists": true
                                     },
                                     "serviceProviderConfiguration": {
                                         "connectionName": "AzureBlob",
@@ -350,20 +340,41 @@
                             "Condition": {
                                 "type": "If",
                                 "expression": {
-                                    "and": [
+                                    "or": [
                                         {
                                             "equals": [
-                                                "@equals(body('Parse_JSON_result_applications')?['@odata.nextLink'])",
+                                                "@empty(body('Parse_JSON_result_applications')?['@odata.nextLink'])",
                                                 "@false"
                                             ]
                                         }
                                     ]
                                 },
-                                "actions": {},
+                                "actions": {
+                                    "Set_next_batch_applications": {
+                                        "type": "SetVariable",
+                                        "inputs": {
+                                            "name": "msGraphEndpoint",
+                                            "value": "@body('Parse_JSON_result_applications')?['@odata.nextLink']"
+                                        },
+                                        "runAfter": {}
+                                    }
+                                },
                                 "runAfter": {
-                                    "Set_next_batch_applications": [
+                                    "Upload_blob_list_application_owners": [
                                         "Succeeded"
                                     ]
+                                },
+                                "else": {
+                                    "actions": {
+                                        "Set_variable": {
+                                            "type": "SetVariable",
+                                            "inputs": {
+                                                "name": "msGraphEndpoint",
+                                                "value": "null"
+                                            },
+                                            "runAfter": {}
+                                        }
+                                    }
                                 }
                             }
                         },

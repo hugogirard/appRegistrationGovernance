@@ -11,7 +11,7 @@
     },
     "AzureBlob": {
       "parameterValues": {
-        "connectionString": "@appsetting('AzureWebJobsStorage')"
+        "connectionString": "@appsetting('ReportCnxString')"
       },
       "serviceProvider": {
         "id": "/serviceProviders/AzureBlob"
