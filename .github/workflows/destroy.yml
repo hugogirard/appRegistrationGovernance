@@ -22,7 +22,7 @@ name: Destroy Resources
 
 on:
   schedule:
-    - cron: "0 23 * * *"
+    - cron: "0 4 * * *"
   workflow_dispatch:
 
 env:
