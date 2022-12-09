@@ -27,3 +27,15 @@ https://graph.microsoft.com/v1.0/applications?$select=id,DisplayName&$expand=own
 select c.id,c.disPlayName,o as owners 
   from c
   JOIN o IN c.owners
+
+
+  select *
+  from c 
+  JOIN p IN c.passwordCredentials
+ WHERE p.endDateTime = '0def5865-1d43-4220-8799-cfad12d87a71'
+
+
+ select c.id,c.displayName
+  from c 
+  JOIN p IN c.passwordCredentials
+ WHERE p.endDateTime <= DateTimeAdd('mm',3,GetCurrentDateTime())

@@ -38,7 +38,7 @@
                         {
                             "name": "msGraphEndpoint",
                             "type": "string",
-                            "value": "https://graph.microsoft.com/v1.0/applications?$select=id,DisplayName,api,appRoles&$expand=owners($select=userPrincipalName)&$top=14"
+                            "value": "https://graph.microsoft.com/v1.0/applications?$select=id,DisplayName,api,appRoles,passwordCredentials&$expand=owners($select=userPrincipalName)&$top=15"
                         }
                     ]
                 },
@@ -120,9 +120,6 @@
                                             "@@odata.context": {
                                                 "type": "string"
                                             },
-                                            "@@odata.nextLink": {
-                                                "type": "string"
-                                            },
                                             "value": {
                                                 "type": "array",
                                                 "items": {
@@ -133,6 +130,101 @@
                                                         },
                                                         "displayName": {
                                                             "type": "string"
+                                                        },
+                                                        "api": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "acceptMappedClaims": {},
+                                                                "knownClientApplications": {
+                                                                    "type": "array"
+                                                                },
+                                                                "requestedAccessTokenVersion": {},
+                                                                "oauth2PermissionScopes": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "adminConsentDescription": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "adminConsentDisplayName": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "id": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "isEnabled": {
+                                                                                "type": "boolean"
+                                                                            },
+                                                                            "type": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "userConsentDescription": {},
+                                                                            "userConsentDisplayName": {},
+                                                                            "value": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "adminConsentDescription",
+                                                                            "adminConsentDisplayName",
+                                                                            "id",
+                                                                            "isEnabled",
+                                                                            "type",
+                                                                            "userConsentDescription",
+                                                                            "userConsentDisplayName",
+                                                                            "value"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "preAuthorizedApplications": {
+                                                                    "type": "array"
+                                                                }
+                                                            }
+                                                        },
+                                                        "appRoles": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "allowedMemberTypes": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    },
+                                                                    "description": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "displayName": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "id": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "isEnabled": {
+                                                                        "type": "boolean"
+                                                                    },
+                                                                    "origin": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "value": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "allowedMemberTypes",
+                                                                    "description",
+                                                                    "displayName",
+                                                                    "id",
+                                                                    "isEnabled",
+                                                                    "origin",
+                                                                    "value"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "passwordCredentials": {
+                                                            "type": "array"
                                                         },
                                                         "owners": {
                                                             "type": "array",
@@ -156,6 +248,9 @@
                                                     "required": [
                                                         "id",
                                                         "displayName",
+                                                        "api",
+                                                        "appRoles",
+                                                        "passwordCredentials",
                                                         "owners"
                                                     ]
                                                 }
@@ -188,13 +283,22 @@
                                         "type": "AppendToArrayVariable",
                                         "inputs": {
                                             "name": "applications",
-                                            "value": {
-                                                "id": "@items('For_each')?['id']",
-                                                "displayName": "@items('For_each')?['displayName']",
-                                                "owners": "@items('For_each')?['owners']",
-                                                "currentDate": "@variables('currentDate')",
-                                                "reportType": "applications"
-                                            }
+                                            "value": "@outputs('Compose_JSON_document_application')"
+                                        },
+                                        "runAfter": {
+                                            "Compose_JSON_document_application": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "Compose_JSON_document_application": {
+                                        "type": "Compose",
+                                        "inputs": {
+                                            "id": "@items('For_each')?['id']",
+                                            "displayName": "@items('For_each')?['displayName']",
+                                            "owners": "@items('For_each')?['owners']",
+                                            "currentDate": "@variables('currentDate')",
+                                            "passwordCredentials": "@items('For_each')?['passwordCredentials']"
                                         },
                                         "runAfter": {}
                                     }
