@@ -132,6 +132,10 @@ resource logiapp 'Microsoft.Web/sites@2021-02-01' = {
           value: strCnxString
         }
         {
+          name: 'ReportCnxString'
+          value: strCnxString
+        }
+        {
           name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
           value: strCnxString
         }
