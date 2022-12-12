@@ -22,7 +22,8 @@ param suffix string
 
 var accountName = 'cosmos${suffix}'
 var databaseName = 'reporting'
-var containerName = 'reports'
+var containerNameReports = 'reports'
+var containerNameAppPermissions = 'appPermissions'
 
 resource account 'Microsoft.DocumentDB/databaseAccounts@2021-10-15' = {
   name: toLower(accountName)
@@ -50,7 +51,7 @@ resource database 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2021-10-15
 }
 
 resource container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2021-10-15' = {
-  name: '${database.name}/${containerName}'
+  name: '${database.name}/${containerNameReports}'
   properties: {
     resource: {
       id: containerName
@@ -66,5 +67,24 @@ resource container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/container
     }
   }
 }
+
+resource container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2021-10-15' = {
+  name: '${database.name}/${containerNameAppPermissions}'
+  properties: {
+    resource: {
+      id: containerName
+      partitionKey: {
+        paths: [
+          '/appName'
+        ]
+        kind: 'Hash'
+      }
+    }
+    options: {
+      throughput: 400
+    }
+  }
+}
+
 
 output cosmosDbAccountName string = account.name
