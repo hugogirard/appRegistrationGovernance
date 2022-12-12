@@ -38,7 +38,7 @@
                         {
                             "name": "msGraphEndpoint",
                             "type": "string",
-                            "value": "https://graph.microsoft.com/v1.0/applications?$select=id,DisplayName,api,appRoles,passwordCredentials&$expand=owners($select=userPrincipalName)&$top=15"
+                            "value": "https://graph.microsoft.com/v1.0/applications?$select=id,DisplayName,api,appRoles,passwordCredentials,requiredResourceAccess&$expand=owners($select=userPrincipalName)&$top=15"
                         }
                     ]
                 },

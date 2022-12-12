@@ -1,0 +1,221 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Get_JWT_Token_Azure_Active_Directory": {
+                "type": "Http",
+                "inputs": {
+                    "method": "POST",
+                    "uri": "https://login.microsoftonline.com/@{appsetting('WORKFLOWS_TENANT_ID')}/oauth2/v2.0/token",
+                    "headers": {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    "body": "grant_type=client_credentials&client_id=@{appsetting('CLIENT_ID')}&client_secret=@{appsetting('CLIENT_SECRET')}&scope=https://graph.microsoft.com/.default"
+                },
+                "runAfter": {
+                    "Parse_JSON_applications": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Get_ObjectID_MS_Graph_Application": {
+                "type": "Http",
+                "inputs": {
+                    "method": "GET",
+                    "uri": "https://graph.microsoft.com/v1.0/servicePrincipals(appId='00000003-0000-0000-c000-000000000000')?$select=id",
+                    "headers": {
+                        "Authorization": "Bearer @{body('Parse_JSON_Access_Token')?['access_token']}"
+                    }
+                },
+                "runAfter": {
+                    "Parse_JSON_Access_Token": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Parse_JSON_Access_Token": {
+                "type": "ParseJson",
+                "inputs": {
+                    "content": "@body('Get_JWT_Token_Azure_Active_Directory')",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "token_type": {
+                                "type": "string"
+                            },
+                            "expires_in": {
+                                "type": "integer"
+                            },
+                            "ext_expires_in": {
+                                "type": "integer"
+                            },
+                            "access_token": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Get_JWT_Token_Azure_Active_Directory": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Parse_JSON_ObjectID_SP_MS_Graph": {
+                "type": "ParseJson",
+                "inputs": {
+                    "content": "@body('Get_ObjectID_MS_Graph_Application')",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "@@odata.context": {
+                                "type": "string"
+                            },
+                            "id": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Get_ObjectID_MS_Graph_Application": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Get_list_applications": {
+                "type": "ServiceProvider",
+                "inputs": {
+                    "parameters": {
+                        "databaseId": "reporting",
+                        "containerId": "reports",
+                        "queryText": " select *\n   from c"
+                    },
+                    "serviceProviderConfiguration": {
+                        "connectionName": "AzureCosmosDB",
+                        "operationId": "QueryDocuments",
+                        "serviceProviderId": "/serviceProviders/AzureCosmosDB"
+                    }
+                },
+                "runAfter": {}
+            },
+            "Parse_JSON_applications": {
+                "type": "ParseJson",
+                "inputs": {
+                    "content": "@body('Get_list_applications')?['items']",
+                    "schema": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "displayName": {
+                                    "type": "string"
+                                },
+                                "owners": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "@@odata.type": {
+                                                "type": "string"
+                                            },
+                                            "userPrincipalName": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": [
+                                            "@@odata.type",
+                                            "userPrincipalName"
+                                        ]
+                                    }
+                                },
+                                "currentDate": {
+                                    "type": "string"
+                                },
+                                "passwordCredentials": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "customKeyIdentifier": {},
+                                            "displayName": {
+                                                "type": "string"
+                                            },
+                                            "endDateTime": {
+                                                "type": "string"
+                                            },
+                                            "hint": {
+                                                "type": "string"
+                                            },
+                                            "keyId": {
+                                                "type": "string"
+                                            },
+                                            "secretText": {},
+                                            "startDateTime": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": [
+                                            "customKeyIdentifier",
+                                            "displayName",
+                                            "endDateTime",
+                                            "hint",
+                                            "keyId",
+                                            "secretText",
+                                            "startDateTime"
+                                        ]
+                                    }
+                                },
+                                "_rid": {
+                                    "type": "string"
+                                },
+                                "_self": {
+                                    "type": "string"
+                                },
+                                "_etag": {
+                                    "type": "string"
+                                },
+                                "_attachments": {
+                                    "type": "string"
+                                },
+                                "_ts": {
+                                    "type": "integer"
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "displayName",
+                                "owners",
+                                "currentDate",
+                                "passwordCredentials",
+                                "_rid",
+                                "_self",
+                                "_etag",
+                                "_attachments",
+                                "_ts"
+                            ]
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Get_list_applications": [
+                        "Succeeded"
+                    ]
+                }
+            }
+        },
+        "triggers": {
+            "manual": {
+                "type": "Request",
+                "kind": "Http",
+                "inputs": {}
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {}
+    },
+    "kind": "Stateful"
+}
