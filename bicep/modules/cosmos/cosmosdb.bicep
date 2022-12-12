@@ -50,11 +50,11 @@ resource database 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2021-10-15
   }
 }
 
-resource container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2021-10-15' = {
+resource containerReports 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2021-10-15' = {
   name: '${database.name}/${containerNameReports}'
   properties: {
     resource: {
-      id: containerName
+      id: containerNameReports
       partitionKey: {
         paths: [
           '/reportDate'
@@ -68,11 +68,11 @@ resource container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/container
   }
 }
 
-resource container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2021-10-15' = {
+resource containerAppPermissions 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2021-10-15' = {
   name: '${database.name}/${containerNameAppPermissions}'
   properties: {
     resource: {
-      id: containerName
+      id: containerNameAppPermissions
       partitionKey: {
         paths: [
           '/appName'
