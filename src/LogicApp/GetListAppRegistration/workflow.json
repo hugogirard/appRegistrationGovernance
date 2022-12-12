@@ -226,6 +226,39 @@
                                                         "passwordCredentials": {
                                                             "type": "array"
                                                         },
+                                                        "requiredResourceAccess": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "resourceAppId": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "resourceAccess": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "id": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "type": {
+                                                                                    "type": "string"
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "id",
+                                                                                "type"
+                                                                            ]
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "resourceAppId",
+                                                                    "resourceAccess"
+                                                                ]
+                                                            }
+                                                        },
                                                         "owners": {
                                                             "type": "array",
                                                             "items": {
@@ -251,6 +284,7 @@
                                                         "api",
                                                         "appRoles",
                                                         "passwordCredentials",
+                                                        "requiredResourceAccess",
                                                         "owners"
                                                     ]
                                                 }
@@ -298,7 +332,10 @@
                                             "displayName": "@items('For_each')?['displayName']",
                                             "owners": "@items('For_each')?['owners']",
                                             "currentDate": "@variables('currentDate')",
-                                            "passwordCredentials": "@items('For_each')?['passwordCredentials']"
+                                            "passwordCredentials": "@items('For_each')?['passwordCredentials']",
+                                            "api": "@items('For_each')?['api']",
+                                            "appRoles": "@items('For_each')?['appRoles']",
+                                            "requiredResourceAccess": "@items('For_each')?['requiredResourceAccess']"
                                         },
                                         "runAfter": {}
                                     }
