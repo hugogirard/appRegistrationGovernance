@@ -38,7 +38,7 @@
                         {
                             "name": "msGraphEndpoint",
                             "type": "string",
-                            "value": "https://graph.microsoft.com/v1.0/applications?$select=id,DisplayName,api,appRoles,passwordCredentials,requiredResourceAccess&$expand=owners($select=userPrincipalName)&$top=15"
+                            "value": "https://graph.microsoft.com/v1.0/applications?$select=id,appId,DisplayName,api,appRoles,passwordCredentials,requiredResourceAccess&$expand=owners($select=userPrincipalName)&$top=15"
                         }
                     ]
                 },
@@ -126,6 +126,9 @@
                                                     "type": "object",
                                                     "properties": {
                                                         "id": {
+                                                            "type": "string"
+                                                        },
+                                                        "appId": {
                                                             "type": "string"
                                                         },
                                                         "displayName": {
@@ -329,6 +332,7 @@
                                         "type": "Compose",
                                         "inputs": {
                                             "id": "@items('For_each')?['id']",
+                                            "appId": "@items('For_each')?['appId']",
                                             "displayName": "@items('For_each')?['displayName']",
                                             "owners": "@items('For_each')?['owners']",
                                             "type": "applications",
@@ -420,7 +424,7 @@
                             "parameters": {
                                 "databaseId": "reporting",
                                 "containerId": "reports",
-                                "queryText": "select c.id,c.displayName,o.userPrincipalName as owner \n  from c\n  JOIN o IN c.owners"
+                                "queryText": "select c.id,c.appId,c.displayName,o.userPrincipalName as owner \n  from c\n  JOIN o IN c.owners\nWHERE c.type = \"applications\""
                             },
                             "serviceProviderConfiguration": {
                                 "connectionName": "AzureCosmosDB",
@@ -473,7 +477,7 @@
                             "parameters": {
                                 "databaseId": "reporting",
                                 "containerId": "reports",
-                                "queryText": "select c.id,c.displayName\n  from c\n WHERE ARRAY_LENGTH(c.owners) < 2"
+                                "queryText": "select c.id,c.appId,c.displayName\n  from c\n WHERE ARRAY_LENGTH(c.owners) < 2\n   AND c.type = \"applications\""
                             },
                             "serviceProviderConfiguration": {
                                 "connectionName": "AzureCosmosDB",
@@ -526,7 +530,7 @@
                             "parameters": {
                                 "databaseId": "reporting",
                                 "containerId": "reports",
-                                "queryText": " select c.id AS ApplicationID,\n        c.displayName AS ApplicationName,\n        p.displayName AS CredentialName,\n        p.endDateTime AS CredentialExpirationEndDateTime\n  from c \n  JOIN p IN c.passwordCredentials\n WHERE p.endDateTime <= DateTimeAdd('mm',3,GetCurrentDateTime())"
+                                "queryText": " select c.id AS objectID,\n        c.appId,\n        c.displayName AS ApplicationName,\n        p.displayName AS CredentialName,\n        p.endDateTime AS CredentialExpirationEndDateTime\n  from c \n  JOIN p IN c.passwordCredentials\n WHERE p.endDateTime <= DateTimeAdd('mm',3,GetCurrentDateTime())\n    AND c.type = \"applications\""
                             },
                             "serviceProviderConfiguration": {
                                 "connectionName": "AzureCosmosDB",

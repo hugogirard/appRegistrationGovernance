@@ -107,31 +107,15 @@
                             ]
                         }
                     },
-                    "for_each_custom_applications": {
-                        "type": "Foreach",
-                        "foreach": "@body('Parse_JSON_cosmosDB_results')",
-                        "actions": {
-                            "Compose_app_scopes": {
-                                "type": "Compose",
-                                "inputs": {
-                                    "id": "@items('for_each_custom_applications')['id']",
-                                    "appId": "@items('for_each_custom_applications')['id']",
-                                    "displayName": "@items('for_each_custom_applications')['displayName']",
-                                    "scopes": "@items('for_each_custom_applications')['oauth2PermissionScopes']"
-                                },
-                                "runAfter": {}
-                            },
-                            "Add_applications": {
-                                "type": "AppendToArrayVariable",
-                                "inputs": {
-                                    "name": "applications",
-                                    "value": "@outputs('Compose_app_scopes')"
-                                },
-                                "runAfter": {
-                                    "Compose_app_scopes": [
-                                        "Succeeded"
-                                    ]
-                                }
+                    "Select": {
+                        "type": "Select",
+                        "inputs": {
+                            "from": "@body('Parse_JSON_cosmosDB_results')",
+                            "select": {
+                                "displayName": "@item()['displayName']",
+                                "scopes": "@item()['oauth2PermissionScopes']",
+                                "type": "appExposePermissions",
+                                "id": "@item()['id']"
                             }
                         },
                         "runAfter": {
@@ -146,7 +130,7 @@
                             "parameters": {
                                 "databaseId": "reporting",
                                 "containerId": "reports",
-                                "items": "@variables('applications')",
+                                "items": "@body('Select')",
                                 "isUpsert": true
                             },
                             "serviceProviderConfiguration": {
@@ -156,14 +140,14 @@
                             }
                         },
                         "runAfter": {
-                            "for_each_custom_applications": [
+                            "Select": [
                                 "Succeeded"
                             ]
                         }
                     }
                 },
                 "runAfter": {
-                    "Initialize_variable_applications": [
+                    "Initialize_variable_customApplications": [
                         "Succeeded"
                     ]
                 }
@@ -181,79 +165,6 @@
                 },
                 "runAfter": {
                     "Get_custom_application_scopes": [
-                        "Succeeded"
-                    ]
-                }
-            },
-            "Initialize_variable_applications": {
-                "type": "InitializeVariable",
-                "inputs": {
-                    "variables": [
-                        {
-                            "name": "applications",
-                            "type": "array",
-                            "value": []
-                        }
-                    ]
-                },
-                "runAfter": {
-                    "Initialize_variable_customApplications": [
-                        "Succeeded"
-                    ]
-                }
-            },
-            "Get_applications_scope_access": {
-                "type": "ServiceProvider",
-                "inputs": {
-                    "parameters": {
-                        "databaseId": "reporting",
-                        "containerId": "reports",
-                        "queryText": "SELECT c.id as appId, c.displayName as displayName,c.requiredResourceAccess\n  FROM c\n WHERE ARRAY_LENGTH(c.requiredResourceAccess) > 0"
-                    },
-                    "serviceProviderConfiguration": {
-                        "connectionName": "AzureCosmosDB",
-                        "operationId": "QueryDocuments",
-                        "serviceProviderId": "/serviceProviders/AzureCosmosDB"
-                    }
-                },
-                "runAfter": {
-                    "if_contains_custom_applications": [
-                        "Succeeded"
-                    ]
-                }
-            },
-            "if_return_documents": {
-                "type": "If",
-                "expression": {
-                    "and": [
-                        {
-                            "greater": [
-                                "@body('Get_applications_scope_access')?['count']",
-                                0
-                            ]
-                        }
-                    ]
-                },
-                "actions": {
-                    "get_saved_app_permissions": {
-                        "type": "ServiceProvider",
-                        "inputs": {
-                            "parameters": {
-                                "databaseId": "reporting",
-                                "containerId": "appPermissions",
-                                "queryText": "SELECT c.appId,\n       c.displayName,\n       c.scopes\n FROM c"
-                            },
-                            "serviceProviderConfiguration": {
-                                "connectionName": "AzureCosmosDB",
-                                "operationId": "QueryDocuments",
-                                "serviceProviderId": "/serviceProviders/AzureCosmosDB"
-                            }
-                        },
-                        "runAfter": {}
-                    }
-                },
-                "runAfter": {
-                    "Get_applications_scope_access": [
                         "Succeeded"
                     ]
                 }
