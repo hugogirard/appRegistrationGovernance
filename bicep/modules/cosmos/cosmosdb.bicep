@@ -75,7 +75,7 @@ resource containerAppPermissions 'Microsoft.DocumentDB/databaseAccounts/sqlDatab
       id: containerNameAppPermissions
       partitionKey: {
         paths: [
-          '/appName'
+          '/appId'
         ]
         kind: 'Hash'
       }
