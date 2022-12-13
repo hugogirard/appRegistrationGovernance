@@ -1,0 +1,217 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Get_custom_application_scopes": {
+                "type": "ServiceProvider",
+                "inputs": {
+                    "parameters": {
+                        "databaseId": "reporting",
+                        "containerId": "reports",
+                        "queryText": "SELECT c.id,c.displayName,c.api.oauth2PermissionScopes\n  FROM c\n  JOIN o IN c.api.oauth2PermissionScopes\n WHERE o.type = \"Admin\"\n ORDER BY c.id"
+                    },
+                    "serviceProviderConfiguration": {
+                        "connectionName": "AzureCosmosDB",
+                        "operationId": "QueryDocuments",
+                        "serviceProviderId": "/serviceProviders/AzureCosmosDB"
+                    }
+                },
+                "runAfter": {}
+            },
+            "if_contains_custom_applications": {
+                "type": "If",
+                "expression": {
+                    "and": [
+                        {
+                            "greater": [
+                                "@body('Get_custom_application_scopes')?['count']",
+                                0
+                            ]
+                        }
+                    ]
+                },
+                "actions": {
+                    "Set_variable_customApplications_(bug_DISTINCT_cosmosDB_connector)": {
+                        "type": "SetVariable",
+                        "inputs": {
+                            "name": "customApplications",
+                            "value": "@union(outputs('Get_custom_application_scopes')?['body']?['items'],outputs('Get_custom_application_scopes')?['body']?['items'])"
+                        },
+                        "runAfter": {}
+                    },
+                    "Parse_JSON_cosmosDB_results": {
+                        "type": "ParseJson",
+                        "inputs": {
+                            "content": "@variables('customApplications')",
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "displayName": {
+                                            "type": "string"
+                                        },
+                                        "oauth2PermissionScopes": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "adminConsentDescription": {
+                                                        "type": "string"
+                                                    },
+                                                    "adminConsentDisplayName": {
+                                                        "type": "string"
+                                                    },
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "isEnabled": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "type": {
+                                                        "type": "string"
+                                                    },
+                                                    "userConsentDescription": {},
+                                                    "userConsentDisplayName": {},
+                                                    "value": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "adminConsentDescription",
+                                                    "adminConsentDisplayName",
+                                                    "id",
+                                                    "isEnabled",
+                                                    "type",
+                                                    "userConsentDescription",
+                                                    "userConsentDisplayName",
+                                                    "value"
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "id",
+                                        "displayName",
+                                        "oauth2PermissionScopes"
+                                    ]
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "Set_variable_customApplications_(bug_DISTINCT_cosmosDB_connector)": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "for_each_custom_applications": {
+                        "type": "Foreach",
+                        "foreach": "@body('Parse_JSON_cosmosDB_results')",
+                        "actions": {
+                            "Compose_app_scopes": {
+                                "type": "Compose",
+                                "inputs": {
+                                    "id": "@guid()",
+                                    "appId": "@items('for_each_custom_applications')['id']",
+                                    "displayName": "@items('for_each_custom_applications')['displayName']",
+                                    "scopes": "@items('for_each_custom_applications')['oauth2PermissionScopes']"
+                                },
+                                "runAfter": {}
+                            },
+                            "Add_applications": {
+                                "type": "AppendToArrayVariable",
+                                "inputs": {
+                                    "name": "applications",
+                                    "value": "@outputs('Compose_app_scopes')"
+                                },
+                                "runAfter": {
+                                    "Compose_app_scopes": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "Parse_JSON_cosmosDB_results": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Insert_custom_applications": {
+                        "type": "ServiceProvider",
+                        "inputs": {
+                            "parameters": {
+                                "databaseId": "reporting",
+                                "containerId": "appPermissions",
+                                "items": "@variables('applications')",
+                                "isUpsert": true
+                            },
+                            "serviceProviderConfiguration": {
+                                "connectionName": "AzureCosmosDB",
+                                "operationId": "BulkCreateOrUpdateDocument",
+                                "serviceProviderId": "/serviceProviders/AzureCosmosDB"
+                            }
+                        },
+                        "runAfter": {
+                            "for_each_custom_applications": [
+                                "Succeeded"
+                            ]
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Initialize_variable_applications": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialize_variable_customApplications": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "customApplications",
+                            "type": "array",
+                            "value": []
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Get_custom_application_scopes": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialize_variable_applications": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "applications",
+                            "type": "array",
+                            "value": []
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_variable_customApplications": [
+                        "Succeeded"
+                    ]
+                }
+            }
+        },
+        "triggers": {
+            "manual": {
+                "type": "Request",
+                "kind": "Http",
+                "inputs": {}
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {}
+    },
+    "kind": "Stateful"
+}
