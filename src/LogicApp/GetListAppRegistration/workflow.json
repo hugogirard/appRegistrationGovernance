@@ -331,7 +331,7 @@
                                             "id": "@items('For_each')?['id']",
                                             "displayName": "@items('For_each')?['displayName']",
                                             "owners": "@items('For_each')?['owners']",
-                                            "currentDate": "@variables('currentDate')",
+                                            "type": "applications",
                                             "passwordCredentials": "@items('For_each')?['passwordCredentials']",
                                             "api": "@items('For_each')?['api']",
                                             "appRoles": "@items('For_each')?['appRoles']",
