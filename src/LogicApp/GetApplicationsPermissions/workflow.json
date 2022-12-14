@@ -8,7 +8,7 @@
                     "parameters": {
                         "databaseId": "reporting",
                         "containerId": "reports",
-                        "queryText": "SELECT c.id,c.displayName,c.api.oauth2PermissionScopes\n  FROM c\n  JOIN o IN c.api.oauth2PermissionScopes\n WHERE o.type = \"Admin\"\n ORDER BY c.id"
+                        "queryText": "SELECT c.id,c.appId,c.displayName,c.api.oauth2PermissionScopes\n  FROM c\n  JOIN o IN c.api.oauth2PermissionScopes\n WHERE o.type = \"Admin\"\n ORDER BY c.id"
                     },
                     "serviceProviderConfiguration": {
                         "connectionName": "AzureCosmosDB",
@@ -49,6 +49,9 @@
                                     "type": "object",
                                     "properties": {
                                         "id": {
+                                            "type": "string"
+                                        },
+                                        "appId": {
                                             "type": "string"
                                         },
                                         "displayName": {
@@ -115,7 +118,8 @@
                                 "displayName": "@item()['displayName']",
                                 "scopes": "@item()['oauth2PermissionScopes']",
                                 "type": "appExposePermissions",
-                                "id": "@item()['id']"
+                                "id": "@item()['id']",
+                                "appId": "@item()?['appId']"
                             }
                         },
                         "runAfter": {
@@ -147,7 +151,7 @@
                     }
                 },
                 "runAfter": {
-                    "Initialize_variable_customApplications": [
+                    "Initialize_variable": [
                         "Succeeded"
                     ]
                 }
@@ -165,6 +169,349 @@
                 },
                 "runAfter": {
                     "Get_custom_application_scopes": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "get_list_applications_with_api_permissions": {
+                "type": "ServiceProvider",
+                "inputs": {
+                    "parameters": {
+                        "databaseId": "reporting",
+                        "containerId": "reports",
+                        "queryText": "SELECT r.resourceAppId as appId\n  FROM c\n  JOIN r IN c.requiredResourceAccess\n WHERE c.type = \"applications\""
+                    },
+                    "serviceProviderConfiguration": {
+                        "connectionName": "AzureCosmosDB",
+                        "operationId": "QueryDocuments",
+                        "serviceProviderId": "/serviceProviders/AzureCosmosDB"
+                    }
+                },
+                "runAfter": {
+                    "Initialize_variable_list_of_api_permission": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "get_list_app_exposed_permissions": {
+                "type": "ServiceProvider",
+                "inputs": {
+                    "parameters": {
+                        "databaseId": "reporting",
+                        "containerId": "reports",
+                        "queryText": "SELECT c.appId\n  FROM c\n WHERE c.type = \"appExposePermissions\""
+                    },
+                    "serviceProviderConfiguration": {
+                        "connectionName": "AzureCosmosDB",
+                        "operationId": "QueryDocuments",
+                        "serviceProviderId": "/serviceProviders/AzureCosmosDB"
+                    }
+                },
+                "runAfter": {
+                    "get_list_applications_with_api_permissions": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialize_variable_list_of_api_permission": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "apiPermissions",
+                            "type": "array",
+                            "value": []
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "if_contains_custom_applications": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "if_get_list_permissions_contains_applications": {
+                "type": "If",
+                "expression": {
+                    "and": [
+                        {
+                            "greater": [
+                                "@body('get_list_applications_with_api_permissions')?['count']",
+                                0
+                            ]
+                        }
+                    ]
+                },
+                "actions": {
+                    "app_exposed_permissions_not_null": {
+                        "type": "If",
+                        "expression": {
+                            "and": [
+                                {
+                                    "greater": [
+                                        "@body('get_list_app_exposed_permissions')?['count']",
+                                        0
+                                    ]
+                                }
+                            ]
+                        },
+                        "actions": {
+                            "Parse_JSON_api_with_exposed_permission": {
+                                "type": "ParseJson",
+                                "inputs": {
+                                    "content": "@body('get_list_app_exposed_permissions')?['items']",
+                                    "schema": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "appId": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "appId"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "runAfter": {}
+                            },
+                            "Parse_JSON_with_api_with_permissions": {
+                                "type": "ParseJson",
+                                "inputs": {
+                                    "content": "@body('get_list_applications_with_api_permissions')?['items']",
+                                    "schema": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "appId": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "appId"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "runAfter": {
+                                    "Parse_JSON_api_with_exposed_permission": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "For_each_2": {
+                                "type": "Foreach",
+                                "foreach": "@body('Parse_JSON_api_with_exposed_permission')",
+                                "actions": {
+                                    "Filter_array_2": {
+                                        "type": "Query",
+                                        "inputs": {
+                                            "from": "@body('Parse_JSON_with_api_with_permissions')",
+                                            "where": "@not(equals(item()['appId'], items('For_each_2')))"
+                                        },
+                                        "runAfter": {}
+                                    }
+                                },
+                                "runAfter": {
+                                    "Parse_JSON_with_api_with_permissions": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            }
+                        },
+                        "runAfter": {},
+                        "else": {
+                            "actions": {
+                                "Set_variable_apps_with_api_permission": {
+                                    "type": "SetVariable",
+                                    "inputs": {
+                                        "name": "apiPermissions",
+                                        "value": "@body('get_list_applications_with_api_permissions')?['items']"
+                                    },
+                                    "runAfter": {}
+                                }
+                            }
+                        }
+                    },
+                    "For_each_app_with_missing_permission": {
+                        "type": "Foreach",
+                        "foreach": "@body('Parse_JSON_apiPermissions')",
+                        "actions": {
+                            "Get_app_object_id": {
+                                "type": "Http",
+                                "inputs": {
+                                    "method": "GET",
+                                    "uri": "https://graph.microsoft.com/v1.0/servicePrincipals(appId='@{items('For_each_app_with_missing_permission')['appId']}')?$select=id",
+                                    "headers": {
+                                        "Authorization": "Bearer @{body('Parse_access_token')?['access_token']}"
+                                    }
+                                },
+                                "runAfter": {}
+                            },
+                            "Parse_JSON_objectID_none_custom_application": {
+                                "type": "ParseJson",
+                                "inputs": {
+                                    "content": "@body('Get_app_object_id')",
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "@@odata.context": {
+                                                "type": "string"
+                                            },
+                                            "id": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                },
+                                "runAfter": {
+                                    "Get_app_object_id": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "Get_application_scopes": {
+                                "type": "Http",
+                                "inputs": {
+                                    "method": "GET",
+                                    "uri": "https://graph.microsoft.com/v1.0/servicePrincipals/@{body('Parse_JSON_objectID_none_custom_application')?['id']}?$select=appId,id,appDisplayName,appRoles",
+                                    "headers": {
+                                        "Authorization": "Bearer @{body('Parse_access_token')?['access_token']}"
+                                    }
+                                },
+                                "runAfter": {
+                                    "Parse_JSON_objectID_none_custom_application": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "Append_to_collection_apps_with_scopes": {
+                                "type": "AppendToArrayVariable",
+                                "inputs": {
+                                    "name": "appswithroles",
+                                    "value": "@body('Get_application_scopes')"
+                                },
+                                "runAfter": {
+                                    "Get_application_scopes": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "Parse_access_token": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Parse_JSON_apiPermissions": {
+                        "type": "ParseJson",
+                        "inputs": {
+                            "content": "@variables('apiPermissions')",
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "appId": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "appId"
+                                    ]
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "app_exposed_permissions_not_null": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Get_access_token": {
+                        "type": "Http",
+                        "inputs": {
+                            "method": "POST",
+                            "uri": "https://login.microsoftonline.com/@{appsetting('WORKFLOWS_TENANT_ID')}/oauth2/v2.0/token",
+                            "headers": {
+                                "Content-Type": "application/x-www-form-urlencoded"
+                            },
+                            "body": "grant_type=client_credentials&client_id=@{appsetting('CLIENT_ID')}&client_secret=@{appsetting('CLIENT_SECRET')}&scope=https://graph.microsoft.com/.default"
+                        },
+                        "runAfter": {
+                            "Parse_JSON_apiPermissions": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Parse_access_token": {
+                        "type": "ParseJson",
+                        "inputs": {
+                            "content": "@body('Get_access_token')",
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "token_type": {
+                                        "type": "string"
+                                    },
+                                    "expires_in": {
+                                        "type": "integer"
+                                    },
+                                    "ext_expires_in": {
+                                        "type": "integer"
+                                    },
+                                    "access_token": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "Get_access_token": [
+                                "Succeeded"
+                            ]
+                        }
+                    }
+                },
+                "runAfter": {
+                    "get_list_app_exposed_permissions": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialize_variable_appswithRole": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "appswithroles",
+                            "type": "array",
+                            "value": []
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_variable_customApplications": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialize_variable": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "test",
+                            "type": "object"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_variable_appswithRole": [
                         "Succeeded"
                     ]
                 }
