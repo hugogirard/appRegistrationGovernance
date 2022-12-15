@@ -278,7 +278,7 @@
                             "parameters": {
                                 "databaseId": "reporting",
                                 "containerId": "reports",
-                                "queryText": "SELECT c.id,\n       c.appId,\n       c.displayName,\n       c.owners,\n       c.passwordCredentials,\n       c.api,\n       c.appRoles,\n       c.requiredResourceAccess,\n       c.type\n  FROM c\n WHERE EXISTS(SELECT VALUE r FROM r IN c.requiredResourceAccess)\n      AND c.type = 'applications'"
+                                "queryText": "SELECT c.id,\n       c.appId,\n       c.displayName,\n       c.owners,\n       c.passwordCredentials,\n       c.api,\n       c.appRoles,\n       c.requiredResourceAccess,\n       c.type\n  FROM c\n WHERE EXISTS(SELECT VALUE r FROM r IN c.requiredResourceAccess)\n      AND c.type = 'applications'\n      AND c.id IN ('0b4a6e61-3295-4542-8a64-14928a856433','bd243a57-ffea-41b4-8206-f60c808b0d98')"
                             },
                             "serviceProviderConfiguration": {
                                 "connectionName": "AzureCosmosDB",
@@ -803,6 +803,11 @@
                                     "Parse_JSON_list_of_applications": [
                                         "Succeeded"
                                     ]
+                                },
+                                "runtimeConfiguration": {
+                                    "concurrency": {
+                                        "repetitions": 1
+                                    }
                                 }
                             }
                         },
