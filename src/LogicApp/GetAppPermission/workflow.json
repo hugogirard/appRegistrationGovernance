@@ -167,117 +167,13 @@
                                                 "type": "string"
                                             },
                                             "appRoles": {
-                                                "type": "array",
-                                                "items": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "allowedMemberTypes": {
-                                                            "type": "array",
-                                                            "items": {
-                                                                "type": "string"
-                                                            }
-                                                        },
-                                                        "description": {
-                                                            "type": "string"
-                                                        },
-                                                        "displayName": {
-                                                            "type": "string"
-                                                        },
-                                                        "id": {
-                                                            "type": "string"
-                                                        },
-                                                        "isEnabled": {
-                                                            "type": "boolean"
-                                                        },
-                                                        "origin": {
-                                                            "type": "string"
-                                                        },
-                                                        "value": {
-                                                            "type": "string"
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "allowedMemberTypes",
-                                                        "description",
-                                                        "displayName",
-                                                        "id",
-                                                        "isEnabled",
-                                                        "origin",
-                                                        "value"
-                                                    ]
-                                                }
+                                                "type": "array"
                                             },
                                             "oauth2PermissionScopes": {
-                                                "type": "array",
-                                                "items": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "adminConsentDescription": {
-                                                            "type": "string"
-                                                        },
-                                                        "adminConsentDisplayName": {
-                                                            "type": "string"
-                                                        },
-                                                        "id": {
-                                                            "type": "string"
-                                                        },
-                                                        "isEnabled": {
-                                                            "type": "boolean"
-                                                        },
-                                                        "type": {
-                                                            "type": "string"
-                                                        },
-                                                        "userConsentDescription": {
-                                                            "type": "string"
-                                                        },
-                                                        "userConsentDisplayName": {
-                                                            "type": "string"
-                                                        },
-                                                        "value": {
-                                                            "type": "string"
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "adminConsentDescription",
-                                                        "adminConsentDisplayName",
-                                                        "id",
-                                                        "isEnabled",
-                                                        "type",
-                                                        "userConsentDescription",
-                                                        "userConsentDisplayName",
-                                                        "value"
-                                                    ]
-                                                }
+                                                "type": "array"
                                             },
                                             "resourceSpecificApplicationPermissions": {
-                                                "type": "array",
-                                                "items": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "description": {
-                                                            "type": "string"
-                                                        },
-                                                        "displayName": {
-                                                            "type": "string"
-                                                        },
-                                                        "id": {
-                                                            "type": "string"
-                                                        },
-                                                        "isEnabled": {
-                                                            "type": "boolean"
-                                                        },
-                                                        "value": {
-                                                            "type": "string"
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "description",
-                                                        "displayName",
-                                                        "id",
-                                                        "isEnabled",
-                                                        "value"
-                                                    ]
-                                                }
+                                                "type": "array"
                                             }
                                         }
                                     }
@@ -372,6 +268,310 @@
                         },
                         "runAfter": {
                             "For_each_app_id": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Query_list_of_applications": {
+                        "type": "ServiceProvider",
+                        "inputs": {
+                            "parameters": {
+                                "databaseId": "reporting",
+                                "containerId": "reports",
+                                "queryText": "SELECT c.id,\n       c.appId,\n       c.displayName,\n       c.owners,\n       c.passwordCredentials,\n       c.api,\n       c.appRoles,\n       c.requiredResourceAccess,\n       c.type\n  FROM c\n WHERE EXISTS(SELECT VALUE r FROM r IN c.requiredResourceAccess)\n      AND c.type = 'applications'"
+                            },
+                            "serviceProviderConfiguration": {
+                                "connectionName": "AzureCosmosDB",
+                                "operationId": "QueryDocuments",
+                                "serviceProviderId": "/serviceProviders/AzureCosmosDB"
+                            }
+                        },
+                        "runAfter": {
+                            "Add_list_apps_with_exposed_permissions": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "if_contains_applications": {
+                        "type": "If",
+                        "expression": {
+                            "and": [
+                                {
+                                    "greater": [
+                                        "@body('Query_list_of_applications')?['count']",
+                                        0
+                                    ]
+                                }
+                            ]
+                        },
+                        "actions": {
+                            "Parse_JSON_list_of_applications": {
+                                "type": "ParseJson",
+                                "inputs": {
+                                    "content": "@body('Query_list_of_applications')?['items']",
+                                    "schema": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "appId": {
+                                                    "type": "string"
+                                                },
+                                                "displayName": {
+                                                    "type": "string"
+                                                },
+                                                "owners": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "@@odata.type": {
+                                                                "type": "string"
+                                                            },
+                                                            "userPrincipalName": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "@@odata.type",
+                                                            "userPrincipalName"
+                                                        ]
+                                                    }
+                                                },
+                                                "passwordCredentials": {
+                                                    "type": "array"
+                                                },
+                                                "api": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "acceptMappedClaims": {},
+                                                        "knownClientApplications": {
+                                                            "type": "array"
+                                                        },
+                                                        "requestedAccessTokenVersion": {},
+                                                        "oauth2PermissionScopes": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "adminConsentDescription": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "adminConsentDisplayName": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "id": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "isEnabled": {
+                                                                        "type": "boolean"
+                                                                    },
+                                                                    "type": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "userConsentDescription": {},
+                                                                    "userConsentDisplayName": {},
+                                                                    "value": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "adminConsentDescription",
+                                                                    "adminConsentDisplayName",
+                                                                    "id",
+                                                                    "isEnabled",
+                                                                    "type",
+                                                                    "userConsentDescription",
+                                                                    "userConsentDisplayName",
+                                                                    "value"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "preAuthorizedApplications": {
+                                                            "type": "array"
+                                                        }
+                                                    }
+                                                },
+                                                "appRoles": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "allowedMemberTypes": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "description": {
+                                                                "type": "string"
+                                                            },
+                                                            "displayName": {
+                                                                "type": "string"
+                                                            },
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "isEnabled": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "origin": {
+                                                                "type": "string"
+                                                            },
+                                                            "value": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "allowedMemberTypes",
+                                                            "description",
+                                                            "displayName",
+                                                            "id",
+                                                            "isEnabled",
+                                                            "origin",
+                                                            "value"
+                                                        ]
+                                                    }
+                                                },
+                                                "requiredResourceAccess": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "resourceAppId": {
+                                                                "type": "string"
+                                                            },
+                                                            "resourceAccess": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "type": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "id",
+                                                                        "type"
+                                                                    ]
+                                                                }
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "resourceAppId",
+                                                            "resourceAccess"
+                                                        ]
+                                                    }
+                                                },
+                                                "type": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "appId",
+                                                "displayName",
+                                                "owners",
+                                                "passwordCredentials",
+                                                "api",
+                                                "appRoles",
+                                                "requiredResourceAccess",
+                                                "type"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "runAfter": {}
+                            },
+                            "For_each_applications": {
+                                "type": "Foreach",
+                                "foreach": "@body('Parse_JSON_list_of_applications')",
+                                "actions": {
+                                    "For_each_requieredResourceAccess": {
+                                        "type": "Foreach",
+                                        "foreach": "@items('For_each_applications')['requiredResourceAccess']",
+                                        "actions": {
+                                            "Parse_JSON_requieredResrouceAccess": {
+                                                "type": "ParseJson",
+                                                "inputs": {
+                                                    "content": "@items('For_each_requieredResourceAccess')",
+                                                    "schema": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "resourceAppId": {
+                                                                "type": "string"
+                                                            },
+                                                            "resourceAccess": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "type": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "id",
+                                                                        "type"
+                                                                    ]
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "runAfter": {}
+                                            },
+                                            "For_each_resourceAccess": {
+                                                "type": "Foreach",
+                                                "foreach": "@body('Parse_JSON_requieredResrouceAccess')?['resourceAccess']",
+                                                "actions": {
+                                                    "Parse_JSON_resourceAccess": {
+                                                        "type": "ParseJson",
+                                                        "inputs": {
+                                                            "content": "@items('For_each_resourceAccess')",
+                                                            "schema": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "type": {
+                                                                        "type": "string"
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "runAfter": {}
+                                                    }
+                                                },
+                                                "runAfter": {
+                                                    "Parse_JSON_requieredResrouceAccess": [
+                                                        "Succeeded"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "runAfter": {}
+                                    }
+                                },
+                                "runAfter": {
+                                    "Parse_JSON_list_of_applications": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "Query_list_of_applications": [
                                 "Succeeded"
                             ]
                         }
