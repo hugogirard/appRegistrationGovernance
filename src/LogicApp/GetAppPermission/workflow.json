@@ -727,6 +727,7 @@
                                         "inputs": {
                                             "id": "@items('For_each_applications')['id']",
                                             "appId": "@items('For_each_applications')['appId']",
+                                            "owners": "@items('For_each_applications')['owners']",
                                             "displayName": "@items('For_each_applications')['displayName']",
                                             "type": "@items('For_each_applications')['type']",
                                             "passwordCredentials": "@items('For_each_applications')['passwordCredentials']",
