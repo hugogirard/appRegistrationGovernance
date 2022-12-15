@@ -551,6 +551,136 @@
                                                             }
                                                         },
                                                         "runAfter": {}
+                                                    },
+                                                    "if_condition_is_scope": {
+                                                        "type": "If",
+                                                        "expression": {
+                                                            "and": [
+                                                                {
+                                                                    "equals": [
+                                                                        "@body('Parse_JSON_resourceAccess')?['type']",
+                                                                        "Scope"
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        },
+                                                        "actions": {
+                                                            "get_scope_permission": {
+                                                                "type": "ServiceProvider",
+                                                                "inputs": {
+                                                                    "parameters": {
+                                                                        "databaseId": "reporting",
+                                                                        "containerId": "reports",
+                                                                        "queryText": "SELECT VALUE s\n  FROM c\n  JOIN s IN c.oauth2PermissionScopes\n WHERE c.type = 'appExposedPermissions'\n   AND c.appId = '@{body('Parse_JSON_requieredResrouceAccess')?['resourceAppId']}'\n   AND s.id = '@{body('Parse_JSON_resourceAccess')?['id']}'"
+                                                                    },
+                                                                    "serviceProviderConfiguration": {
+                                                                        "connectionName": "AzureCosmosDB",
+                                                                        "operationId": "QueryDocuments",
+                                                                        "serviceProviderId": "/serviceProviders/AzureCosmosDB"
+                                                                    }
+                                                                },
+                                                                "runAfter": {}
+                                                            },
+                                                            "Parse_JSON_scope": {
+                                                                "type": "ParseJson",
+                                                                "inputs": {
+                                                                    "content": "@first(outputs('get_scope_permission')?['body']?['items'])",
+                                                                    "schema": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "adminConsentDescription": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "adminConsentDisplayName": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "id": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "isEnabled": {
+                                                                                "type": "boolean"
+                                                                            },
+                                                                            "type": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "userConsentDescription": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "userConsentDisplayName": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "value": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "runAfter": {
+                                                                    "get_scope_permission": [
+                                                                        "Succeeded"
+                                                                    ]
+                                                                }
+                                                            }
+                                                        },
+                                                        "runAfter": {
+                                                            "Parse_JSON_resourceAccess": [
+                                                                "Succeeded"
+                                                            ]
+                                                        },
+                                                        "else": {
+                                                            "actions": {
+                                                                "get_role_permission": {
+                                                                    "type": "ServiceProvider",
+                                                                    "inputs": {
+                                                                        "parameters": {
+                                                                            "databaseId": "reporting",
+                                                                            "containerId": "reports",
+                                                                            "queryText": "SELECT VALUE a\n  FROM c\n  JOIN a IN c.appRoles\n WHERE c.type = 'appExposedPermissions'\n   AND c.appId = '@{body('Parse_JSON_requieredResrouceAccess')?['resourceAppId']}'\n   AND a.id = '@{body('Parse_JSON_resourceAccess')?['id']}'"
+                                                                        },
+                                                                        "serviceProviderConfiguration": {
+                                                                            "connectionName": "AzureCosmosDB",
+                                                                            "operationId": "QueryDocuments",
+                                                                            "serviceProviderId": "/serviceProviders/AzureCosmosDB"
+                                                                        }
+                                                                    },
+                                                                    "runAfter": {}
+                                                                },
+                                                                "Parse_JSON_roles": {
+                                                                    "type": "ParseJson",
+                                                                    "inputs": {
+                                                                        "content": "@first(outputs('get_role_permission')?['body']?['items'])",
+                                                                        "schema": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "description": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "displayName": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "id": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "isEnabled": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "origin": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "value": {
+                                                                                    "type": "string"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    "runAfter": {
+                                                                        "get_role_permission": [
+                                                                            "Succeeded"
+                                                                        ]
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
                                                     }
                                                 },
                                                 "runAfter": {
