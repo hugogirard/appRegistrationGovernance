@@ -620,6 +620,24 @@
                                                                         "Succeeded"
                                                                     ]
                                                                 }
+                                                            },
+                                                            "Append_to_array_variable_scopes": {
+                                                                "type": "AppendToArrayVariable",
+                                                                "inputs": {
+                                                                    "name": "scopes",
+                                                                    "value": {
+                                                                        "id": "@body('Parse_JSON_scope')?['id']",
+                                                                        "displayName": "@body('Parse_JSON_scope')?['adminConsentDisplayName']",
+                                                                        "type": "@body('Parse_JSON_scope')?['type']",
+                                                                        "value": "@body('Parse_JSON_scope')?['value']",
+                                                                        "kind": "Scope"
+                                                                    }
+                                                                },
+                                                                "runAfter": {
+                                                                    "Parse_JSON_scope": [
+                                                                        "Succeeded"
+                                                                    ]
+                                                                }
                                                             }
                                                         },
                                                         "runAfter": {
@@ -678,6 +696,24 @@
                                                                             "Succeeded"
                                                                         ]
                                                                     }
+                                                                },
+                                                                "Append_to_array_variable_roles": {
+                                                                    "type": "AppendToArrayVariable",
+                                                                    "inputs": {
+                                                                        "name": "roles",
+                                                                        "value": {
+                                                                            "id": "@body('Parse_JSON_roles')?['id']",
+                                                                            "displayName": "@body('Parse_JSON_roles')?['displayName']",
+                                                                            "origin": "@body('Parse_JSON_roles')?['origin']",
+                                                                            "value": "@body('Parse_JSON_roles')?['value']",
+                                                                            "kind": "Role"
+                                                                        }
+                                                                    },
+                                                                    "runAfter": {
+                                                                        "Parse_JSON_roles": [
+                                                                            "Succeeded"
+                                                                        ]
+                                                                    }
                                                                 }
                                                             }
                                                         }
@@ -688,9 +724,99 @@
                                                         "Succeeded"
                                                     ]
                                                 }
+                                            },
+                                            "Append_to_array_variable_requiredResourcesAccess": {
+                                                "type": "AppendToArrayVariable",
+                                                "inputs": {
+                                                    "name": "requiredResourcesAccess",
+                                                    "value": {
+                                                        "resourceAppId": "@body('Parse_JSON_requieredResrouceAccess')?['resourceAppId']",
+                                                        "resourceAccess": "@union(variables('scopes'),variables('roles'))"
+                                                    }
+                                                },
+                                                "runAfter": {
+                                                    "For_each_resourceAccess": [
+                                                        "Succeeded"
+                                                    ]
+                                                }
                                             }
                                         },
                                         "runAfter": {}
+                                    },
+                                    "Compose_updated_application_document": {
+                                        "type": "Compose",
+                                        "inputs": {
+                                            "id": "@items('For_each_applications')['id']",
+                                            "appId": "@items('For_each_applications')['appId']",
+                                            "displayName": "@items('For_each_applications')['displayName']",
+                                            "type": "@items('For_each_applications')['type']",
+                                            "passwordCredentials": "@items('For_each_applications')['passwordCredentials']",
+                                            "api": "@items('For_each_applications')['api']",
+                                            "appRoles": "@items('For_each_applications')['appRoles']",
+                                            "requiredResourceAccess": "@variables('requiredResourcesAccess')"
+                                        },
+                                        "runAfter": {
+                                            "For_each_requieredResourceAccess": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "Update_application": {
+                                        "type": "ServiceProvider",
+                                        "inputs": {
+                                            "parameters": {
+                                                "databaseId": "reporting",
+                                                "containerId": "reports",
+                                                "item": "@outputs('Compose_updated_application_document')",
+                                                "isUpsert": true
+                                            },
+                                            "serviceProviderConfiguration": {
+                                                "connectionName": "AzureCosmosDB",
+                                                "operationId": "CreateOrUpdateDocument",
+                                                "serviceProviderId": "/serviceProviders/AzureCosmosDB"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Compose_updated_application_document": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "init_requiered_resource_access": {
+                                        "type": "SetVariable",
+                                        "inputs": {
+                                            "name": "requiredResourcesAccess",
+                                            "value": []
+                                        },
+                                        "runAfter": {
+                                            "Update_application": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "Init_variable_roles": {
+                                        "type": "SetVariable",
+                                        "inputs": {
+                                            "name": "roles",
+                                            "value": []
+                                        },
+                                        "runAfter": {
+                                            "init_requiered_resource_access": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "init_scopes": {
+                                        "type": "SetVariable",
+                                        "inputs": {
+                                            "name": "scopes",
+                                            "value": []
+                                        },
+                                        "runAfter": {
+                                            "Init_variable_roles": [
+                                                "Succeeded"
+                                            ]
+                                        }
                                     }
                                 },
                                 "runAfter": {
@@ -708,7 +834,7 @@
                     }
                 },
                 "runAfter": {
-                    "Initialize_variable_list_of_apps_exposed_permissions": [
+                    "Initialize_variable_requiredResourcesAccess": [
                         "Succeeded"
                     ]
                 }
@@ -743,6 +869,56 @@
                 },
                 "runAfter": {
                     "Initialize_variable_list_of_app_ids": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialize_variable_scopes": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "scopes",
+                            "type": "array",
+                            "value": []
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_variable_list_of_apps_exposed_permissions": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialize_variable_roles": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "roles",
+                            "type": "array",
+                            "value": []
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_variable_scopes": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialize_variable_requiredResourcesAccess": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "requiredResourcesAccess",
+                            "type": "array"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_variable_roles": [
                         "Succeeded"
                     ]
                 }
