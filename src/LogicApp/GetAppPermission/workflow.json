@@ -2,13 +2,13 @@
     "definition": {
         "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
         "actions": {
-            "get_applications": {
+            "get_list_ids_of_applications_permissions": {
                 "type": "ServiceProvider",
                 "inputs": {
                     "parameters": {
                         "databaseId": "reporting",
                         "containerId": "reports",
-                        "queryText": "SELECT TOP 10 c.id,\n       c.appId,\n       c.displayName,\n       c.owners,\n       c.passwordCredentials,\n       c.api,\n       c.appRoles,\n       c.requiredResourceAccess\n  FROM c\n WHERE EXISTS(SELECT VALUE r FROM r IN c.requiredResourceAccess)\n      AND c.type = 'applications'\nORDER BY c.id"
+                        "queryText": "SELECT r.resourceAppId\n  FROM c\n  JOIN r IN c.requiredResourceAccess\n WHERE c.type = 'applications'"
                     },
                     "serviceProviderConfiguration": {
                         "connectionName": "AzureCosmosDB",
@@ -18,110 +18,153 @@
                 },
                 "runAfter": {}
             },
-            "if_applications_found": {
+            "if_contains_applications_permissions": {
                 "type": "If",
                 "expression": {
                     "and": [
                         {
                             "greater": [
-                                "@body('get_applications')?['count']",
+                                "@body('get_list_ids_of_applications_permissions')?['count']",
                                 0
                             ]
                         }
                     ]
                 },
                 "actions": {
-                    "For_each_applications": {
+                    "Remove_duplicate_ids": {
+                        "type": "SetVariable",
+                        "inputs": {
+                            "name": "appsIds",
+                            "value": "@union(body('Parse_JSON_list_of_app_ids'),body('Parse_JSON_list_of_app_ids'))"
+                        },
+                        "runAfter": {
+                            "Parse_JSON_list_of_app_ids": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Parse_JSON_list_of_app_ids": {
+                        "type": "ParseJson",
+                        "inputs": {
+                            "content": "@body('get_list_ids_of_applications_permissions')?['items']",
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "resourceAppId": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "resourceAppId"
+                                    ]
+                                }
+                            }
+                        },
+                        "runAfter": {}
+                    },
+                    "For_each_app_id": {
                         "type": "Foreach",
-                        "foreach": "@body('get_applications')?['items']",
+                        "foreach": "@variables('appsIds')",
                         "actions": {
-                            "Parse_JSON_application": {
+                            "Get_object_ID_for_SP": {
+                                "type": "Http",
+                                "inputs": {
+                                    "method": "GET",
+                                    "uri": "https://graph.microsoft.com/v1.0/servicePrincipals(appId='@{body('Parse_JSON_app_applicationId')?['resourceAppId']}')?$select=id",
+                                    "headers": {
+                                        "Authorization": "Bearer @{body('Parse_JSON_access_token')?['access_token']}"
+                                    }
+                                },
+                                "runAfter": {
+                                    "Parse_JSON_app_applicationId": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "Parse_JSON_app_applicationId": {
                                 "type": "ParseJson",
                                 "inputs": {
-                                    "content": "@items('For_each_applications')",
+                                    "content": "@items('For_each_app_id')",
                                     "schema": {
                                         "type": "object",
                                         "properties": {
+                                            "resourceAppId": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                },
+                                "runAfter": {}
+                            },
+                            "Parse_JSON_objectID_from_application": {
+                                "type": "ParseJson",
+                                "inputs": {
+                                    "content": "@body('Get_object_ID_for_SP')",
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "@@odata.context": {
+                                                "type": "string"
+                                            },
                                             "id": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                },
+                                "runAfter": {
+                                    "Get_object_ID_for_SP": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "Get_application_permissions": {
+                                "type": "Http",
+                                "inputs": {
+                                    "method": "GET",
+                                    "uri": "https://graph.microsoft.com/v1.0/servicePrincipals/@{body('Parse_JSON_objectID_from_application')?['id']}?$select=id,appDisplayName,appId,appRoles,oauth2PermissionScopes,resourceSpecificApplicationPermissions",
+                                    "headers": {
+                                        "Authorization": "Bearer @{body('Parse_JSON_access_token')?['access_token']}"
+                                    }
+                                },
+                                "runAfter": {
+                                    "Parse_JSON_objectID_from_application": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "Append_to_array_variable_list_of_apps_permission": {
+                                "type": "AppendToArrayVariable",
+                                "inputs": {
+                                    "name": "appsWithExposedPermission",
+                                    "value": "@outputs('Compose_document')"
+                                },
+                                "runAfter": {
+                                    "Compose_document": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "Parse_JSON_application_exposed_permissions": {
+                                "type": "ParseJson",
+                                "inputs": {
+                                    "content": "@body('Get_application_permissions')",
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "@@odata.context": {
+                                                "type": "string"
+                                            },
+                                            "id": {
+                                                "type": "string"
+                                            },
+                                            "appDisplayName": {
                                                 "type": "string"
                                             },
                                             "appId": {
                                                 "type": "string"
-                                            },
-                                            "displayName": {
-                                                "type": "string"
-                                            },
-                                            "owners": {
-                                                "type": "array",
-                                                "items": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "@@odata.type": {
-                                                            "type": "string"
-                                                        },
-                                                        "userPrincipalName": {
-                                                            "type": "string"
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "@@odata.type",
-                                                        "userPrincipalName"
-                                                    ]
-                                                }
-                                            },
-                                            "passwordCredentials": {
-                                                "type": "array"
-                                            },
-                                            "api": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "acceptMappedClaims": {},
-                                                    "knownClientApplications": {
-                                                        "type": "array"
-                                                    },
-                                                    "requestedAccessTokenVersion": {},
-                                                    "oauth2PermissionScopes": {
-                                                        "type": "array",
-                                                        "items": {
-                                                            "type": "object",
-                                                            "properties": {
-                                                                "adminConsentDescription": {
-                                                                    "type": "string"
-                                                                },
-                                                                "adminConsentDisplayName": {
-                                                                    "type": "string"
-                                                                },
-                                                                "id": {
-                                                                    "type": "string"
-                                                                },
-                                                                "isEnabled": {
-                                                                    "type": "boolean"
-                                                                },
-                                                                "type": {
-                                                                    "type": "string"
-                                                                },
-                                                                "userConsentDescription": {},
-                                                                "userConsentDisplayName": {},
-                                                                "value": {
-                                                                    "type": "string"
-                                                                }
-                                                            },
-                                                            "required": [
-                                                                "adminConsentDescription",
-                                                                "adminConsentDisplayName",
-                                                                "id",
-                                                                "isEnabled",
-                                                                "type",
-                                                                "userConsentDescription",
-                                                                "userConsentDisplayName",
-                                                                "value"
-                                                            ]
-                                                        }
-                                                    },
-                                                    "preAuthorizedApplications": {
-                                                        "type": "array"
-                                                    }
-                                                }
                                             },
                                             "appRoles": {
                                                 "type": "array",
@@ -164,164 +207,99 @@
                                                     ]
                                                 }
                                             },
-                                            "requiredResourceAccess": {
+                                            "oauth2PermissionScopes": {
                                                 "type": "array",
                                                 "items": {
                                                     "type": "object",
                                                     "properties": {
-                                                        "resourceAppId": {
+                                                        "adminConsentDescription": {
                                                             "type": "string"
                                                         },
-                                                        "resourceAccess": {
-                                                            "type": "array",
-                                                            "items": {
-                                                                "type": "object",
-                                                                "properties": {
-                                                                    "id": {
-                                                                        "type": "string"
-                                                                    },
-                                                                    "type": {
-                                                                        "type": "string"
-                                                                    }
-                                                                },
-                                                                "required": [
-                                                                    "id",
-                                                                    "type"
-                                                                ]
-                                                            }
+                                                        "adminConsentDisplayName": {
+                                                            "type": "string"
+                                                        },
+                                                        "id": {
+                                                            "type": "string"
+                                                        },
+                                                        "isEnabled": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "type": {
+                                                            "type": "string"
+                                                        },
+                                                        "userConsentDescription": {
+                                                            "type": "string"
+                                                        },
+                                                        "userConsentDisplayName": {
+                                                            "type": "string"
+                                                        },
+                                                        "value": {
+                                                            "type": "string"
                                                         }
                                                     },
                                                     "required": [
-                                                        "resourceAppId",
-                                                        "resourceAccess"
+                                                        "adminConsentDescription",
+                                                        "adminConsentDisplayName",
+                                                        "id",
+                                                        "isEnabled",
+                                                        "type",
+                                                        "userConsentDescription",
+                                                        "userConsentDisplayName",
+                                                        "value"
                                                     ]
                                                 }
-                                            }
-                                        }
-                                    }
-                                },
-                                "runAfter": {}
-                            },
-                            "For_each_requiered_resources_access": {
-                                "type": "Foreach",
-                                "foreach": "@body('Parse_JSON_application')?['requiredResourceAccess']",
-                                "actions": {
-                                    "Parse_JSON_requiredResourceAccess": {
-                                        "type": "ParseJson",
-                                        "inputs": {
-                                            "content": "@items('For_each_requiered_resources_access')",
-                                            "schema": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "resourceAppId": {
-                                                        "type": "string"
+                                            },
+                                            "resourceSpecificApplicationPermissions": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "description": {
+                                                            "type": "string"
+                                                        },
+                                                        "displayName": {
+                                                            "type": "string"
+                                                        },
+                                                        "id": {
+                                                            "type": "string"
+                                                        },
+                                                        "isEnabled": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "value": {
+                                                            "type": "string"
+                                                        }
                                                     },
-                                                    "resourceAccess": {
-                                                        "type": "array",
-                                                        "items": {
-                                                            "type": "object",
-                                                            "properties": {
-                                                                "id": {
-                                                                    "type": "string"
-                                                                },
-                                                                "type": {
-                                                                    "type": "string"
-                                                                }
-                                                            },
-                                                            "required": [
-                                                                "id",
-                                                                "type"
-                                                            ]
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        "runAfter": {}
-                                    },
-                                    "if_application_not_saved_already": {
-                                        "type": "If",
-                                        "expression": {
-                                            "and": [
-                                                {
-                                                    "equals": [
-                                                        "@contains(variables('appIdProcessed'),body('Parse_JSON_requiredResourceAccess')?['resourceAppId'])",
-                                                        "@false"
-                                                    ]
-                                                }
-                                            ]
-                                        },
-                                        "actions": {
-                                            "Get_SP_object_ID": {
-                                                "type": "Http",
-                                                "inputs": {
-                                                    "method": "GET",
-                                                    "uri": "https://graph.microsoft.com/v1.0/servicePrincipals(appId='@{body('Parse_JSON_requiredResourceAccess')?['resourceAppId']}')?$select=id",
-                                                    "headers": {
-                                                        "Authorization": "Bearer @{body('Parse_JSON_access_token')?['access_token']}"
-                                                    }
-                                                },
-                                                "runAfter": {}
-                                            },
-                                            "Parse_JSON_SP_objectID": {
-                                                "type": "ParseJson",
-                                                "inputs": {
-                                                    "content": "@body('Get_SP_object_ID')",
-                                                    "schema": {
-                                                        "type": "object",
-                                                        "properties": {
-                                                            "@@odata.context": {
-                                                                "type": "string"
-                                                            },
-                                                            "id": {
-                                                                "type": "string"
-                                                            }
-                                                        }
-                                                    }
-                                                },
-                                                "runAfter": {
-                                                    "Get_SP_object_ID": [
-                                                        "Succeeded"
-                                                    ]
-                                                }
-                                            },
-                                            "Get_applications_permissions": {
-                                                "type": "Http",
-                                                "inputs": {
-                                                    "method": "GET",
-                                                    "uri": "https://graph.microsoft.com/v1.0/servicePrincipals/951e1833-9aac-4026-954c-076fbd963def?$select=id,appDisplayName,appId,appRoles,oauth2PermissionScopes,resourceSpecificApplicationPermissions",
-                                                    "headers": {
-                                                        "Authorization": "Bearer @{body('Parse_JSON_access_token')?['access_token']}"
-                                                    }
-                                                },
-                                                "runAfter": {
-                                                    "Parse_JSON_SP_objectID": [
-                                                        "Succeeded"
-                                                    ]
-                                                }
-                                            },
-                                            "Append_to_array_appIdProcessed": {
-                                                "type": "AppendToArrayVariable",
-                                                "inputs": {
-                                                    "name": "appIdProcessed",
-                                                    "value": "@body('Parse_JSON_requiredResourceAccess')?['resourceAppId']"
-                                                },
-                                                "runAfter": {
-                                                    "Get_applications_permissions": [
-                                                        "Succeeded"
+                                                    "required": [
+                                                        "description",
+                                                        "displayName",
+                                                        "id",
+                                                        "isEnabled",
+                                                        "value"
                                                     ]
                                                 }
                                             }
-                                        },
-                                        "runAfter": {
-                                            "Parse_JSON_requiredResourceAccess": [
-                                                "Succeeded"
-                                            ]
                                         }
                                     }
                                 },
                                 "runAfter": {
-                                    "Parse_JSON_application": [
+                                    "Get_application_permissions": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "Compose_document": {
+                                "type": "Compose",
+                                "inputs": {
+                                    "id": "@body('Parse_JSON_application_exposed_permissions')?['id']",
+                                    "appId": "@body('Parse_JSON_application_exposed_permissions')?['appId']",
+                                    "appRoles": "@body('Parse_JSON_application_exposed_permissions')?['appRoles']",
+                                    "oauth2PermissionScopes": "@body('Parse_JSON_application_exposed_permissions')?['oauth2PermissionScopes']",
+                                    "resourceSpecificApplicationPermissions": "@body('Parse_JSON_application_exposed_permissions')?['resourceSpecificApplicationPermissions']",
+                                    "type": "appExposedPermissions"
+                                },
+                                "runAfter": {
+                                    "Parse_JSON_application_exposed_permissions": [
                                         "Succeeded"
                                     ]
                                 }
@@ -343,7 +321,11 @@
                             },
                             "body": "grant_type=client_credentials&client_id=@{appsetting('CLIENT_ID')}&client_secret=@{appsetting('CLIENT_SECRET')}&scope=https://graph.microsoft.com/.default"
                         },
-                        "runAfter": {}
+                        "runAfter": {
+                            "Remove_duplicate_ids": [
+                                "Succeeded"
+                            ]
+                        }
                     },
                     "Parse_JSON_access_token": {
                         "type": "ParseJson",
@@ -372,43 +354,65 @@
                                 "Succeeded"
                             ]
                         }
+                    },
+                    "Add_list_apps_with_exposed_permissions": {
+                        "type": "ServiceProvider",
+                        "inputs": {
+                            "parameters": {
+                                "databaseId": "reporting",
+                                "containerId": "reports",
+                                "items": "@variables('appsWithExposedPermission')",
+                                "isUpsert": true
+                            },
+                            "serviceProviderConfiguration": {
+                                "connectionName": "AzureCosmosDB",
+                                "operationId": "BulkCreateOrUpdateDocument",
+                                "serviceProviderId": "/serviceProviders/AzureCosmosDB"
+                            }
+                        },
+                        "runAfter": {
+                            "For_each_app_id": [
+                                "Succeeded"
+                            ]
+                        }
                     }
                 },
                 "runAfter": {
-                    "Initialize_variable_list_of_appId_processed": [
+                    "Initialize_variable_list_of_apps_exposed_permissions": [
                         "Succeeded"
                     ]
                 }
             },
-            "Initialize_variable_list_of_permission": {
+            "Initialize_variable_list_of_app_ids": {
                 "type": "InitializeVariable",
                 "inputs": {
                     "variables": [
                         {
-                            "name": "appListOfPermission",
-                            "type": "array"
-                        }
-                    ]
-                },
-                "runAfter": {
-                    "get_applications": [
-                        "Succeeded"
-                    ]
-                }
-            },
-            "Initialize_variable_list_of_appId_processed": {
-                "type": "InitializeVariable",
-                "inputs": {
-                    "variables": [
-                        {
-                            "name": "appIdProcessed",
+                            "name": "appsIds",
                             "type": "array",
                             "value": []
                         }
                     ]
                 },
                 "runAfter": {
-                    "Initialize_variable_list_of_permission": [
+                    "get_list_ids_of_applications_permissions": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialize_variable_list_of_apps_exposed_permissions": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "appsWithExposedPermission",
+                            "type": "array",
+                            "value": []
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_variable_list_of_app_ids": [
                         "Succeeded"
                     ]
                 }
