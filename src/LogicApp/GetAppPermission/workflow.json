@@ -604,10 +604,16 @@
                                                                                 "type": "string"
                                                                             },
                                                                             "userConsentDescription": {
-                                                                                "type": "string"
+                                                                                "type": [
+                                                                                    "string",
+                                                                                    "null"
+                                                                                ]
                                                                             },
                                                                             "userConsentDisplayName": {
-                                                                                "type": "string"
+                                                                                "type": [
+                                                                                    "string",
+                                                                                    "null"
+                                                                                ]
                                                                             },
                                                                             "value": {
                                                                                 "type": "string"
