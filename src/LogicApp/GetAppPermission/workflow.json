@@ -189,6 +189,7 @@
                                 "inputs": {
                                     "id": "@body('Parse_JSON_application_exposed_permissions')?['id']",
                                     "appId": "@body('Parse_JSON_application_exposed_permissions')?['appId']",
+                                    "appDisplayName": "@body('Parse_JSON_application_exposed_permissions')?['appDisplayName']",
                                     "appRoles": "@body('Parse_JSON_application_exposed_permissions')?['appRoles']",
                                     "oauth2PermissionScopes": "@body('Parse_JSON_application_exposed_permissions')?['oauth2PermissionScopes']",
                                     "resourceSpecificApplicationPermissions": "@body('Parse_JSON_application_exposed_permissions')?['resourceSpecificApplicationPermissions']",
@@ -492,6 +493,9 @@
                                                             "resourceAppId": {
                                                                 "type": "string"
                                                             },
+                                                            "appDisplayName": {
+                                                                "type": "string"
+                                                            },
                                                             "resourceAccess": {
                                                                 "type": "array",
                                                                 "items": {
@@ -685,6 +689,7 @@
                                                                             "displayName": "@body('Parse_JSON_roles')?['displayName']",
                                                                             "origin": "@body('Parse_JSON_roles')?['origin']",
                                                                             "value": "@body('Parse_JSON_roles')?['value']",
+                                                                            "type": "",
                                                                             "kind": "Role"
                                                                         }
                                                                     },
@@ -710,6 +715,7 @@
                                                     "name": "requiredResourcesAccess",
                                                     "value": {
                                                         "resourceAppId": "@body('Parse_JSON_requieredResrouceAccess')?['resourceAppId']",
+                                                        "appDisplayName": "@body('Parse_JSON_requieredResrouceAccess')?['appDisplayName']",
                                                         "resourceAccess": "@union(variables('scopes'),variables('roles'))"
                                                     }
                                                 },
