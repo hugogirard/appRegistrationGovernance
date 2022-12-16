@@ -704,7 +704,7 @@
                                                     }
                                                 },
                                                 "runAfter": {
-                                                    "get_appDisplayName": [
+                                                    "Parse_JSON_appDisplayname": [
                                                         "Succeeded"
                                                     ]
                                                 }
@@ -715,7 +715,7 @@
                                                     "name": "requiredResourcesAccess",
                                                     "value": {
                                                         "resourceAppId": "@body('Parse_JSON_requieredResrouceAccess')?['resourceAppId']",
-                                                        "appDisplayName": "@first(outputs('get_appDisplayName')?['body']?['items'])",
+                                                        "appDisplayName": "@first(outputs('get_appDisplayName')?['body']?['items'])['appDisplayName']",
                                                         "resourceAccess": "@union(variables('scopes'),variables('roles'))"
                                                     }
                                                 },
@@ -741,6 +741,55 @@
                                                 },
                                                 "runAfter": {
                                                     "Parse_JSON_requieredResrouceAccess": [
+                                                        "Succeeded"
+                                                    ]
+                                                }
+                                            },
+                                            "Parse_JSON_appDisplayname": {
+                                                "type": "ParseJson",
+                                                "inputs": {
+                                                    "content": "@body('get_appDisplayName')?['items']",
+                                                    "schema": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "appDisplayName": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "appDisplayName"
+                                                            ]
+                                                        }
+                                                    }
+                                                },
+                                                "runAfter": {
+                                                    "get_appDisplayName": [
+                                                        "Succeeded"
+                                                    ]
+                                                }
+                                            },
+                                            "Set_variable_roles": {
+                                                "type": "SetVariable",
+                                                "inputs": {
+                                                    "name": "roles",
+                                                    "value": []
+                                                },
+                                                "runAfter": {
+                                                    "Append_to_array_variable_requiredResourcesAccess": [
+                                                        "Succeeded"
+                                                    ]
+                                                }
+                                            },
+                                            "Set_variable_scopes": {
+                                                "type": "SetVariable",
+                                                "inputs": {
+                                                    "name": "scopes",
+                                                    "value": []
+                                                },
+                                                "runAfter": {
+                                                    "Set_variable_roles": [
                                                         "Succeeded"
                                                     ]
                                                 }
