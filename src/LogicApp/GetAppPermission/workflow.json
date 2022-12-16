@@ -704,7 +704,7 @@
                                                     }
                                                 },
                                                 "runAfter": {
-                                                    "Parse_JSON_requieredResrouceAccess": [
+                                                    "get_appDisplayName": [
                                                         "Succeeded"
                                                     ]
                                                 }
@@ -715,12 +715,32 @@
                                                     "name": "requiredResourcesAccess",
                                                     "value": {
                                                         "resourceAppId": "@body('Parse_JSON_requieredResrouceAccess')?['resourceAppId']",
-                                                        "appDisplayName": "@body('Parse_JSON_requieredResrouceAccess')?['appDisplayName']",
+                                                        "appDisplayName": "@first(outputs('get_appDisplayName')?['body']?['items'])",
                                                         "resourceAccess": "@union(variables('scopes'),variables('roles'))"
                                                     }
                                                 },
                                                 "runAfter": {
                                                     "For_each_resourceAccess": [
+                                                        "Succeeded"
+                                                    ]
+                                                }
+                                            },
+                                            "get_appDisplayName": {
+                                                "type": "ServiceProvider",
+                                                "inputs": {
+                                                    "parameters": {
+                                                        "databaseId": "reporting",
+                                                        "containerId": "reports",
+                                                        "queryText": "select c.appDisplayName\n  from c \n where c.appId = '@{body('Parse_JSON_requieredResrouceAccess')?['resourceAppId']}'\n   and c.type = 'appExposedPermissions'"
+                                                    },
+                                                    "serviceProviderConfiguration": {
+                                                        "connectionName": "AzureCosmosDB",
+                                                        "operationId": "QueryDocuments",
+                                                        "serviceProviderId": "/serviceProviders/AzureCosmosDB"
+                                                    }
+                                                },
+                                                "runAfter": {
+                                                    "Parse_JSON_requieredResrouceAccess": [
                                                         "Succeeded"
                                                     ]
                                                 }
