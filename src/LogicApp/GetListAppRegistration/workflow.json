@@ -547,7 +547,7 @@
                     "Create_CSV_list_of_credentials_to_be_expired": {
                         "type": "Table",
                         "inputs": {
-                            "from": "@body('Get_secrets_to_expired')?['items']",
+                            "from": "@union(outputs('Get_secrets_to_expired')?['body']?['items'],outputs('Get_secrets_to_expired')?['body']?['items'])",
                             "format": "CSV"
                         },
                         "runAfter": {
@@ -573,6 +573,24 @@
                         },
                         "runAfter": {
                             "Create_CSV_list_of_credentials_to_be_expired": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Call_back_orchestrator_function": {
+                        "type": "Http",
+                        "inputs": {
+                            "method": "POST",
+                            "uri": "@triggerBody()?['callbackURL']"
+                        },
+                        "runAfter": {
+                            "Upload_blob_list_application_owners": [
+                                "Succeeded"
+                            ],
+                            "Upload_blob_list_apps_with_less_than_two_owners": [
+                                "Succeeded"
+                            ],
+                            "Upload_blob_to_storage_container": [
                                 "Succeeded"
                             ]
                         }
@@ -606,7 +624,16 @@
             "manual": {
                 "type": "Request",
                 "kind": "Http",
-                "inputs": {}
+                "inputs": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "callbackURL": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
             }
         },
         "contentVersion": "1.0.0.0",

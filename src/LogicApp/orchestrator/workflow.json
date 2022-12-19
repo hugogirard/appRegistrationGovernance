@@ -2,7 +2,20 @@
     "definition": {
         "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
         "actions": {
-
+            "Call_Logic_App_list_of_registered_applications": {
+                "type": "HttpWebhook",
+                "inputs": {
+                    "subscribe": {
+                        "method": "POST",
+                        "uri": "@appsetting('LOGIC_APP_APP_REGISTRATION')",
+                        "body": {
+                            "callbackURL": "@listCallbackUrl()"
+                        }
+                    },
+                    "unsubscribe": {}
+                },
+                "runAfter": {}
+            }
         },
         "triggers": {
             "manual": {
