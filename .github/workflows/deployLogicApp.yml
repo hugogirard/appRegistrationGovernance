@@ -22,10 +22,14 @@ name: Deploy Logic App
 on:
   workflow_dispatch:
   
+  workflow_run:
+    workflows: ["Create Azure Resources"]
+    types:
+      - completed
+
   push:
     paths:
-      - "src/LogicApp/**"
-      - ".github/workflows/deployLogicApp.yml"
+      - "src/LogicApp/**"  
 
 env:
   RG_NAME: 'rg-logic-app-governance'
