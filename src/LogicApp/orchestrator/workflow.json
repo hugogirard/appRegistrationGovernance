@@ -15,6 +15,24 @@
                     "unsubscribe": {}
                 },
                 "runAfter": {}
+            },
+            "Call_Logic_App_list_applications_permissions": {
+                "type": "HttpWebhook",
+                "inputs": {
+                    "subscribe": {
+                        "method": "POST",
+                        "uri": "@appsetting('LOGIC_APP_APP_PERMISSIONS')",
+                        "body": {
+                            "callbackURL": "@listCallbackUrl()"
+                        }
+                    },
+                    "unsubscribe": {}
+                },
+                "runAfter": {
+                    "Call_Logic_App_list_of_registered_applications": [
+                        "Succeeded"
+                    ]
+                }
             }
         },
         "triggers": {
