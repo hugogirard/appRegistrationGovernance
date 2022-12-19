@@ -535,6 +535,12 @@
                                                                     },
                                                                     "type": {
                                                                         "type": "string"
+                                                                    },
+                                                                    "kind": {
+                                                                        "type": [
+                                                                            "string",
+                                                                            "null"
+                                                                        ]
                                                                     }
                                                                 }
                                                             }
@@ -544,13 +550,19 @@
                                                     "if_condition_is_scope": {
                                                         "type": "If",
                                                         "expression": {
-                                                            "and": [
+                                                            "or": [
                                                                 {
                                                                     "equals": [
                                                                         "@body('Parse_JSON_resourceAccess')?['type']",
                                                                         "Scope"
                                                                     ]
-                                                                }
+                                                                },
+                                                                {
+                                                                    "equals": [
+                                                                        "@body('Parse_JSON_resourceAccess')?['kind']",
+                                                                        "Scope"
+                                                                    ]
+                                                                }               
                                                             ]
                                                         },
                                                         "actions": {
@@ -922,7 +934,7 @@
                                 "inputs": {
                                     "parameters": {
                                         "containerName": "reports",
-                                        "blobName": "@concat()",
+                                        "blobName": "@concat('apps_permissions_',variables('currentDate'),'.csv')",
                                         "content": "@body('Create_CSV_table_list_of_applications_with_permissions')",
                                         "overrideIfExists": true
                                     },
