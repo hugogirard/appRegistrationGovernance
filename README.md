@@ -45,4 +45,4 @@ Now create the following [GitHub actions secrets](https://docs.github.com/en/res
 
 # Create the Azure resources
 
-Now, execute the GitHub action called **Create Azure Resources**, this will create all necessary resources in Azure in a resource group called **rg-logic-app-governance**
+Now, execute the GitHub action called **Create Azure Resources**, this will create all necessary resources in Azure in a resource group called **rg-logic-app-governance**.  Once the GitHub action finished, now you can run the one called **Deploy Logic App**.
