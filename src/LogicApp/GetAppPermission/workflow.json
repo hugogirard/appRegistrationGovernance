@@ -884,6 +884,59 @@
                                         "repetitions": 1
                                     }
                                 }
+                            },
+                            "Query_applications_with_permission": {
+                                "type": "ServiceProvider",
+                                "inputs": {
+                                    "parameters": {
+                                        "databaseId": "reporting",
+                                        "containerId": "reports",
+                                        "queryText": "SELECT c.appId as ApplicationId,\n       c.displayName as ApplicationName,\n       r.appDisplayName as ApiPermissionName,\n       a[\"value\"] as PermissionName\n  FROM c\n  JOIN r IN c.requiredResourceAccess\n  JOIN a IN r.resourceAccess\n WHERE c.type = \"applications\""
+                                    },
+                                    "serviceProviderConfiguration": {
+                                        "connectionName": "AzureCosmosDB",
+                                        "operationId": "QueryDocuments",
+                                        "serviceProviderId": "/serviceProviders/AzureCosmosDB"
+                                    }
+                                },
+                                "runAfter": {
+                                    "For_each_applications": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "Create_CSV_table_list_of_applications_with_permissions": {
+                                "type": "Table",
+                                "inputs": {
+                                    "from": "@body('Query_applications_with_permission')?['items']",
+                                    "format": "CSV"
+                                },
+                                "runAfter": {
+                                    "Query_applications_with_permission": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "Upload_report_apps_with_permissions": {
+                                "type": "ServiceProvider",
+                                "inputs": {
+                                    "parameters": {
+                                        "containerName": "reports",
+                                        "blobName": "@concat()",
+                                        "content": "@body('Create_CSV_table_list_of_applications_with_permissions')",
+                                        "overrideIfExists": true
+                                    },
+                                    "serviceProviderConfiguration": {
+                                        "connectionName": "AzureBlob",
+                                        "operationId": "uploadBlob",
+                                        "serviceProviderId": "/serviceProviders/AzureBlob"
+                                    }
+                                },
+                                "runAfter": {
+                                    "Create_CSV_table_list_of_applications_with_permissions": [
+                                        "Succeeded"
+                                    ]
+                                }
                             }
                         },
                         "runAfter": {
@@ -911,7 +964,7 @@
                     ]
                 },
                 "runAfter": {
-                    "get_list_ids_of_applications_permissions": [
+                    "Initialize_variable_currentDate": [
                         "Succeeded"
                     ]
                 }
@@ -979,6 +1032,23 @@
                 },
                 "runAfter": {
                     "Initialize_variable_roles": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Initialize_variable_currentDate": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "currentDate",
+                            "type": "string",
+                            "value": "@{utcNow()}"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "get_list_ids_of_applications_permissions": [
                         "Succeeded"
                     ]
                 }

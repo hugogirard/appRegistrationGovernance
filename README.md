@@ -1,3 +1,23 @@
+# Disclaimer
+
+Notice: Any links, references, or attachments that contain sample scripts, code, or commands comes with the following notification.
+
+This Sample Code is provided for the purpose of illustration only and is not intended to be used in a production environment.
+THIS SAMPLE CODE AND ANY RELATED INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
+
+We grant You a nonexclusive, royalty-free right to use and modify the Sample Code and to reproduce and distribute the object code form of the Sample Code,
+provided that You agree:
+
+(i) to not use Our name, logo, or trademarks to market Your software product in which the Sample Code is embedded;
+(ii) to include a valid copyright notice on Your software product in which the Sample Code is embedded; and
+(iii) to indemnify, hold harmless, and defend Us and Our suppliers from and against any claims or lawsuits,
+including attorneys’ fees, that arise or result from the use or distribution of the Sample Code.
+
+Please note: None of the conditions outlined in the disclaimer above will superseded the terms and conditions contained within the Premier Customer Services Description.
+
+**DEMO POC - "AS IS"**
+
 # Introduction
 
 This GitHub provide an example how to generate reports related to your App Registration in Azure Active Directory.  When your applications stacks growth in Azure Active Directory it can be difficult to keep track (inventory) of what you have there with the permissions of those applications.
@@ -45,4 +65,16 @@ Now create the following [GitHub actions secrets](https://docs.github.com/en/res
 
 # Create the Azure resources
 
-Now, execute the GitHub action called **Create Azure Resources**, this will create all necessary resources in Azure in a resource group called **rg-logic-app-governance**.  Once the GitHub action finished, now you can run the one called **Deploy Logic App**.
+Now, execute the GitHub action called **Create Azure Resources**, this will create all necessary resources in Azure in a resource group called **rg-logic-app-governance**.  Once the GitHub action finished it will trigger the GitHub action called **Deploy Logic App**.
+
+# Execute the workflow
+
+The logic app contains two workflows, **GetListAppRegistration** and another called **GetAppPermission**.  The **order** the workflow run here are **important**.  You need to run first the **GetListAppRegistration**, once this workflow finished, you can run **GetAppPermission**.
+
+Here those logic app use the HTTP Trigger, in a real production workflow you will probably have an orchestrator function based on a timer trigger that will execute sequentially the two logic app.  HTTP Trigger were used here for simplicity purpose.
+
+# What is not implemented here
+
+Here the continuation token were not implemented in the CosmosDB connector.  If you run this demo on an Active Directory that contains a lot of application registration you will probably need to implement this.
+
+For more information about this you can follow this [link](https://techcommunity.microsoft.com/t5/integrations-on-azure-blog/paging-using-continuation-token-to-return-large-list-of-items-in/ba-p/2522802)
