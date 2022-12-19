@@ -973,7 +973,7 @@
                             "Create_CSV_table_applications_with_admin_consent": {
                                 "type": "Table",
                                 "inputs": {
-                                    "from": "@body('Query_application_with_admin_consent')?['items']",
+                                    "from": "@union(outputs('Query_application_with_admin_consent')?['body']?['items'],outputs('Query_application_with_admin_consent')?['body']?['items'])",
                                     "format": "CSV"
                                 },
                                 "runAfter": {
