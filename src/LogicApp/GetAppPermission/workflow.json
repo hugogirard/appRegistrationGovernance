@@ -1002,6 +1002,21 @@
                                         "Succeeded"
                                     ]
                                 }
+                            },
+                            "Call_Logic_App_orchestrator": {
+                                "type": "Http",
+                                "inputs": {
+                                    "method": "POST",
+                                    "uri": "@triggerBody()?['callbackURL']"
+                                },
+                                "runAfter": {
+                                    "Upload_blob_applications_with_admin_consents": [
+                                        "Succeeded"
+                                    ],
+                                    "Upload_report_apps_with_permissions": [
+                                        "Succeeded"
+                                    ]
+                                }
                             }
                         },
                         "runAfter": {
@@ -1123,7 +1138,16 @@
             "manual": {
                 "type": "Request",
                 "kind": "Http",
-                "inputs": {}
+                "inputs": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "callbackURL": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
             }
         },
         "contentVersion": "1.0.0.0",
