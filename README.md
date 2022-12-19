@@ -70,12 +70,12 @@ Now, execute the GitHub action called **Create Azure Resources**, this will crea
 
 # Configure Logic App parameters
 
-If you want to use the Logic App workflow **orchestrator** to launch all the process you need to add two app settings.  To do this, go to the Azure Portal in the created Logic App and go to the **Configuration blade**, add the two app settings below.
+If you want to use the Logic App workflow **orchestrator** to launch all the process, you need to add two app settings.  To do this, go to the Azure Portal in the created Logic App and go to the **Configuration blade**, add the two app settings below.
 
 | Name | Value
 | ---- | -----
 | LOGIC_APP_APP_REGISTRATION | The workflow URL for the workflow named **GetListAppRegistration**
-| LOGIC_APP_APP_PERMISSIONS | The workflow URL fot the workflow named **GetAppPermission**
+| LOGIC_APP_APP_PERMISSIONS | The workflow URL for the workflow named **GetAppPermission**
 
 ![settings](https://github.com/hugogirard/appRegistrationGovernance/blob/main/diagram/settings.png?raw=true)
 
@@ -85,11 +85,17 @@ To find the workflow URL you need to go to each workflow and copy the workflow U
 
 # Execute the workflow
 
-The logic app contains three workflows, **GetListAppRegistration** and another called **GetAppPermission**.  The **order** the workflow run here are **important**.  You need to run first the **GetListAppRegistration**, once this workflow finished, you can run **GetAppPermission**.
+The logic app contains three workflows, **GetListAppRegistration** and another called **GetAppPermission**.  The **order** the workflow run here is **important**.  You need to run first the **GetListAppRegistration**, once this workflow finished, you can run **GetAppPermission**.
 
-The third workflow called **orchestrator** will basically run the two others workflows in order.  You can always just run this one.
+The third workflow called **orchestrator** will basically run the two other workflows in order.  You can always just run this one.
 
-Here those logic app use the HTTP Trigger, in a real production workflow you will probably use the orchestrator with a timer trigger to run on a specific schedule.
+Here that logic app use the HTTP Trigger, in a real production workflow you will probably use the orchestrator with a timer trigger to run on a specific schedule.
+
+## Generated Reports
+
+Once the two workflows finished running (or the orchestrator), you should see 5 reports (csv file) in the Azure storage container.
+
+![settings](https://github.com/hugogirard/appRegistrationGovernance/blob/main/diagram/storage.png?raw=true)
 
 # What is not implemented here
 
