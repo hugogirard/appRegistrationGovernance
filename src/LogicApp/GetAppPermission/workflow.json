@@ -987,7 +987,7 @@
                                 "inputs": {
                                     "parameters": {
                                         "containerName": "reports",
-                                        "blobName": "test",
+                                        "blobName": "@concat('apps_with_admin_consent_',variables('currentDate'),'.csv')",
                                         "content": "@body('Create_CSV_table_applications_with_admin_consent')",
                                         "overrideIfExists": true
                                     },
@@ -1123,7 +1123,7 @@
                         {
                             "name": "currentDate",
                             "type": "string",
-                            "value": "@{utcNow()}"
+                            "value": "@{utcNow('yyyyMM')}"
                         }
                     ]
                 },
